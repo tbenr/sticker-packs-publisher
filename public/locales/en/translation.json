@@ -1,0 +1,59 @@
+{
+    "home": {
+        "text1": "Sell stickers. Earn SNT.",
+        "text2": "To publish stickers to the Status Sticker Market, first connect your Ethereum wallet."
+    },
+    "connect-wallet": "Connect Wallet",
+    "wallet-status": {
+        "connected-wallet": "CONNECTED WALLET",
+        "logout": "Log out"
+    },
+    "new-sticker-pack": "New sticker pack",
+    "dashboard": {
+        "sold-sticker": "SOLD STICKER PACKS",
+        "total-earnings": "TOTAL EARNINGS",
+        "contribution-to-status": "CONTRIBUTION TO STATUS"
+    },
+    "new": {
+        "title": "New sticker pack",
+        "upload-stickers": "Drag or click to upload stickers",
+        "upload-banner": "Drag or click to upload banner",
+        "upload-thumbnail": "Drag or click to upload thumbnail",
+        "upload": "Upload",
+        "drop-file": "Drop file here",
+        "drop-files": "Drop files here",
+        "meta-title": "Metadata",
+        "meta-artistname": "Your artist name",
+        "meta-stickerpack-name": "Name your sticker pack",
+        "meta-category": "Select category",
+        "meta-address": "Ethereum address or ENS domain to receive SNT",
+        "meta-limit-installs": "Limit installs of sticker pack",
+        "meta-limit-installs-tooltip": "If you want to create scarcity to your pack you can limit how many users can install it in Status.",
+        "meta-price": "Pack price",
+        "meta-contribution": "Contribution to Status Network from sales",
+        "meta-contribution-tooltip": "All contributions go to the team working on and maintaining the Sticker Market.",
+        "stickers-title": "Stickers",
+        "stckers-description1": "Upload ",
+        "stckers-description2": "12-36 stickers in PNG or GIF ",
+        "stckers-description3": "format with transparend background. ",
+        "stckers-description4": "Each sticker must be ",
+        "stckers-description5": "exactly 280x280 pixel and max 400kb.",
+        "stckers-description6": "Please follow the guidelines of our ",
+        "banner-title": "Sticker Market Banner",
+        "banner-description1": "A good banner showcases your stickers, helping your pack to stand out.",
+        "banner-description2": "Upload an ",
+        "banner-description3": "exactly 1280x800 pixel ",
+        "banner-description4": "size banner in ",
+        "banner-description5": "JPG or PNG ",
+        "banner-description6": "format.",
+        "thumbnail-title": "Sticker Pack Thumbnail",
+        "thumbnail-description1": "The thumbnail is used primarily to identify your pack in the menu once purchased.",
+        "thumbnail-description2": "Upload an ",
+        "thumbnail-description3": "exactly 128x128 pixel ",
+        "thumbnail-description4": "size banner in ",
+        "thumbnail-description5": "JPG or PNG ",
+        "thumbnail-description6": "format."
+    },
+    "show-example": "Show example",
+    "terms-and-conditions": "Terms and Conditions."
+}

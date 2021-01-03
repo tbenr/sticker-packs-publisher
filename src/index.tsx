@@ -1,13 +1,20 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './index.css';
-import App from './App';
+import CssBaseline from '@material-ui/core/CssBaseline';
+import { ThemeProvider } from '@material-ui/core/styles';
+import App from './components/App/App';
 import * as serviceWorker from './serviceWorker';
+import theme from './theme';
+
+import './i18n';
 
 ReactDOM.render(
-  <React.StrictMode>
+  //<React.StrictMode> requirese Material-ui 5
+    <ThemeProvider theme={theme}>
+    <CssBaseline />
     <App />
-  </React.StrictMode>,
+    </ThemeProvider>,
+  //</React.StrictMode>,
   document.getElementById('root')
 );
 
