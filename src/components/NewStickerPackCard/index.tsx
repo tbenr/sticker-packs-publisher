@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next';
 
 import { useHistory } from "react-router-dom";
 
-import useStyles from './styles'
+import useStylesCommon from '../../common/styles';
+import useStyles from './styles';
 
 import { ReactComponent as IconPlus } from '../../images/iconPlus.svg'
 
@@ -15,13 +16,15 @@ import theme from '../../theme';
 export default function () {
     const { t } = useTranslation();
     const classes = useStyles();
+    const commonClasses = useStylesCommon();
+
     const history = useHistory();
     return (
         <EmptyFrame className={classes.frameSize}>
             <Grid container direction="column" alignItems="center">
                 <IconButton color="primary" onClick={() => history.push('/new/')}>
                     <Grid item>
-                        <div className={classes.iconContainer}>
+                        <div className={commonClasses.iconContainer}>
                             <IconPlus fill={theme.palette.primary.main}/>
                         </div>
                     </Grid>

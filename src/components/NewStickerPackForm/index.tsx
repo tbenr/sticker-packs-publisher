@@ -1,30 +1,21 @@
-import React, { Fragment, useState, useCallback, useRef, useLayoutEffect, MemoExoticComponent } from 'react';
-import { useWeb3React } from '@web3-react/core'
-import { Button, Grid, Box, Input, Typography, Link, TextField, Divider, FormControl, Select, MenuItem, InputLabel, withStyles, Theme, createStyles, InputBase, Tooltip, Chip, RootRef } from '@material-ui/core';
-import { createMetadataEDN, IMetadata } from '../Web3/stickerMetadata'
-import { StickerMarketABI, StickerMarketAddresses } from '../Web3/stickerContracts'
-import contentHash from 'content-hash'
-import { Contract } from '@ethersproject/contracts'
-import { FixedNumber, BigNumber } from 'ethers'
-import { DropzoneOptions, useDropzone } from 'react-dropzone'
-import EmptyFrame from '../EmptyFrameCard'
-import FormSection from '../FormSection'
-import Image from '../Image'
-
-import useStyles from './styles'
-import { ReactComponent as IconUpload } from '../../images/iconUpload.svg'
-import { ReactComponent as IconHelp } from '../../images/iconHelp.svg'
-import { useTranslation } from 'react-i18next'
-
-import {
-  GridContextProvider,
-  GridDropZone,
-  GridItem,
-  swap
-} from "react-grid-dnd";
-
-import { useStickerState, useStickerDispatch } from '../Web3/context'
-import theme from '../../theme';
+import { Contract } from '@ethersproject/contracts';
+import { Box, Button, Chip, createStyles, Divider, Grid, InputBase, InputLabel, Link, MenuItem, Select, Theme, Tooltip, Typography, withStyles } from '@material-ui/core';
+import { useWeb3React } from '@web3-react/core';
+import contentHash from 'content-hash';
+import { BigNumber, FixedNumber } from 'ethers';
+import React, { Fragment, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { ReactComponent as IconHelp } from '../../images/iconHelp.svg';
+import { ipfsAdd } from '../../utils/ipfs';
+import EmptyFrame from '../EmptyFrameCard';
+import FormSection from '../FormSection';
+import StickersDndGrid from '../StickersDndGrid'
+import Image from '../Image';
+import { useStickerDispatch, useStickerState } from '../Web3/context';
+import { StickerMarketABI, StickerMarketAddresses } from '../Web3/stickerContracts';
+import { createMetadataEDN, IMetadata } from '../Web3/stickerMetadata';
+import Dropzone from '../Dropzone'
+import useStyles from './styles';
 
 const categories: any = {
   '0x00000001': 'adult',
@@ -66,20 +57,6 @@ const thumbnailLimits = {
   maxSize: 200 * 1024
 }
 
-async function ipfsAdd(content: string | Blob) {
-  console.log("content" + content)
-  const formData = new FormData();
-  formData.append("", content);
-  const response = await fetch("https://ipfs.infura.io:5001/api/v0/add", {
-    method: 'post',
-    body: formData
-  });
-  if (response.status === 200) {
-    return response.json();
-  }
-  return null;
-}
-
 async function uploadFile(name: string, author: string, thumbnail: string, preview: string, stickers: string[]) {
   const m: IMetadata = {
     name: name,
@@ -106,141 +83,6 @@ function validateImageWeight(imageFile: any, maxWeight: number) {
 };
 
 /** UI **/
-interface MyDropzoneProps {
-  onDrop: (arg0: any) => Promise<any>,
-  dropLabel: string,
-  draggingLabel: string,
-  disabled?: boolean | false,
-  multiple?: boolean | false
-}
-
-function MyDropzone(
-  props: React.PropsWithChildren<MyDropzoneProps>
-) {
-  const classes = useStyles();
-  const { t } = useTranslation();
-
-  const {multiple, onDrop, disabled, children } = props;
-  const dropzoneprops: DropzoneOptions = { onDrop, disabled, multiple }
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone(dropzoneprops)
-
-  return (
-    <Box position="relative" height="100%" width="100%" style={{ outline: 'none' }} {...getRootProps()}>
-      <input {...getInputProps()} />
-      <Box height="100%" width="100%" display="flex" justifyContent="center" alignItems="center" >
-        {children !== undefined && children}
-        {!children &&
-          <Grid container direction="column" alignItems="center">
-            <Grid item>
-              <div className={classes.iconContainer}>
-                <IconUpload fill={theme.palette.primary.main}/>
-              </div>
-            </Grid>
-            <Grid item>
-              <Typography variant="subtitle2" color="primary">{t(props.dropLabel)}</Typography>
-            </Grid>
-          </Grid>
-        }
-      </Box>
-      {isDragActive &&
-        <Box height="100%" width="100%" display="flex" justifyContent="center" alignItems="center" className={classes.dropover}>
-          <Typography variant="subtitle2" color="primary">{t(props.draggingLabel)}</Typography>
-        </Box>}
-    </Box>
-  )
-}
-
-function StickersPreview(props:
-  {
-    stickers: string[],
-    uploading: number,
-    setStickers: (arg1: string[]) => void
-  }) {
-  const { stickers, setStickers, uploading } = props;
-  const width = 460;
-  const height = 343;
-
-  const classes = useStyles();
-  const { t } = useTranslation();
-
-  const grid_vert_lines_x: number[] = [];
-  const columns = 4;
-  const vDivsSpace = width / columns
-  for (let i = 1; i < columns; i++) grid_vert_lines_x.push(vDivsSpace * i)
-
-  const grid_vert_lines_y: number[] = [];
-  const rows = 3;
-  const hDivsSpace = height / rows
-  for (let i = 1; i < rows; i++) grid_vert_lines_y.push(hDivsSpace * i)
-
-  const max_elements = columns * rows
-  const remaining_elements = max_elements - (stickers.length + uploading)
-
-  const upload_arrow_idx = max_elements-remaining_elements
-
-
-  // target id will only be set if dragging from one dropzone to another.
-  function onChange(sourceId: any,
-    sourceIndex: number,
-    targetIndex: number,
-    targetId?: string) {
-    const nextState = swap(stickers, sourceIndex, targetIndex);
-    setStickers(nextState);
-  }
-
-  function onRemove(valueToRemove: string) {
-    const nextState = stickers.filter((value) => {return value !== valueToRemove})
-    setStickers(nextState);
-  }
-
-  return (
-    <GridContextProvider onChange={onChange}>
-      <GridDropZone
-        id="items"
-        boxesPerRow={columns}
-        rowHeight={hDivsSpace}
-        style={{ height: height, width: width }}
-      >
-        {stickers.map(item => (
-          <GridItem key={item}>
-            <Box height="100%" width="100%" display="flex" justifyContent="center" alignItems="center" >
-              <Image removable onRemove={()=>{onRemove(item)}} width={88} height={88} borderRadius={16} ipfs={item} />
-            </Box>
-          </GridItem>
-        ))}
-        {[
-          ...Array(uploading),
-        ].map((value: undefined, idx: number) => (
-          <GridItem key={`upl_${idx}`}>
-            <Box height="100%" width="100%" display="flex" justifyContent="center" alignItems="center" >
-              <Image removable width={88} height={88} borderRadius={16} uploading={true} />
-            </Box>
-          </GridItem>
-        ))
-        }
-        {[
-              ...Array(remaining_elements),
-          ].map((value: undefined, idx: number) => (
-            <div key={`rem_${idx}`} style={{position:'absolute',
-                                            top: Math.floor(((upload_arrow_idx+idx)/columns))*hDivsSpace,
-                                            left: ((upload_arrow_idx+idx)%columns)*vDivsSpace,
-                                            width: vDivsSpace,
-                                            height: hDivsSpace,
-                                            pointerEvents:'none'}}>
-              <Box height="100%" width="100%" display="flex" flexDirection='column' justifyContent="center" alignItems="center" >
-                <IconUpload fill={theme.palette.grey[400]}/>
-                <Typography variant="subtitle2" color="textSecondary">{t('new.upload')}</Typography>
-              </Box>
-            </div>
-          ))}
-      </GridDropZone>
-      {(grid_vert_lines_x.map((value) => (<Box className={classes.gridDividerVertical} left={value} border />)))}
-      {(grid_vert_lines_y.map((value) => (<Box className={classes.gridDividerHorizontal} top={value} border />)))}
-    </GridContextProvider>
-  );
-}
-
 const BootstrapInput = withStyles((theme: Theme) =>
   createStyles({
     root: {
@@ -306,8 +148,8 @@ export default function (props: any) {
   };
 
   const uploadDescription = async (_: any) => {
-    const res = await uploadFile(name, author, thumbnail, banner, uploadedStickers);
-    setHash(res.Hash);
+    const hash = await uploadFile(name, author, thumbnail, banner, uploadedStickers);
+    setHash(hash);
   };
 
   React.useEffect(() => {
@@ -329,23 +171,22 @@ export default function (props: any) {
 
   const handleThumbnail = async (files: any) => {
     let imageFile = files[0];
-    if (imageFile) {
+   /* if (imageFile) {
       const localImageUrl = URL.createObjectURL(imageFile);
       const imageObject = new window.Image();
 
       imageObject.onload = () => {
         imageFile.width = imageObject.naturalWidth;
         imageFile.height = imageObject.naturalHeight;
-        //input.onChange(imageFile);
         URL.revokeObjectURL(imageFile);
       };
       imageObject.src = localImageUrl;
-    }
+    }*/
 
     setThumbnail("");
     setUploadingThumbnail(true);
-    ipfsAdd(imageFile).then(res => {
-      setThumbnail(res.Hash);
+    ipfsAdd(imageFile).then(hash => {
+      setThumbnail(hash);
       setUploadingThumbnail(false);
     });
   };
@@ -353,8 +194,8 @@ export default function (props: any) {
   const handleBanner = async (files: any) => {
     setBanner("");
     setUploadingBanner(true);
-    ipfsAdd(files[0]).then(res => {
-      setBanner(res.Hash)
+    ipfsAdd(files[0]).then(hash => {
+      setBanner(hash)
       setUploadingBanner(false);
     });
   };
@@ -363,7 +204,7 @@ export default function (props: any) {
     setUploadingStickers(files.length);
     Promise.all(files.map(ipfsAdd)).then(all => {
       setUploadingStickers(0);
-      setUploadedStickers(all.map((a: any) => a.Hash));
+      setUploadedStickers(all.map((hash: string) => hash));
     })
   };
 
@@ -383,7 +224,7 @@ export default function (props: any) {
 
   return (
     <Box display="flex" flexDirection='column' justifyContent='center' alignItems="center" width='100%'>
-      <Box display="flex" flexDirection='column' justifyContent='center' alignItems="center" width='75vw' minWidth='600px'>
+      <Box display="flex" flexDirection='column' justifyContent='center' alignItems="center" width='75vw' minWidth='764px' maxWidth='1024px'>
         <Box alignSelf="flex-start" marginTop="40px">
           <Typography variant="h5">{t('new.title')}</Typography>
         </Box>
@@ -533,15 +374,15 @@ export default function (props: any) {
           <Grid container direction="row" justify="center" alignItems="center" spacing={4}>
             <Grid item>
               <EmptyFrame className={classes.stickerFrameSize}>
-                <MyDropzone
+                <Dropzone
                   onDrop={handleStickers}
                   multiple={true}
-                  draggingLabel="new.drop-files"
-                  dropLabel="new.upload-stickers"
+                  draggingLabel={(t("new.drop-files"))}
+                  dropLabel={(t("new.upload-stickers"))}
                   disabled={uploadedStickers.length === max_stickers}>
                   {showStickersPreview &&
-                    <StickersPreview stickers={stickers} setStickers={setStickers} uploading={uploadingStickers} />}
-                </MyDropzone>
+                    <StickersDndGrid stickers={stickers} setStickers={setStickers} uploading={uploadingStickers} />}
+                </Dropzone>
               </EmptyFrame>
             </Grid>
             <Grid item xs>
@@ -564,10 +405,10 @@ export default function (props: any) {
           <Grid container direction="row" justify="center" alignItems="center" spacing={4}>
             <Grid item>
               <EmptyFrame className={classes.bannerFrameSize}>
-                <MyDropzone
+                <Dropzone
                   onDrop={handleBanner}
-                  draggingLabel="new.drop-file"
-                  dropLabel="new.upload-banner"
+                  draggingLabel={(t("new.drop-file"))}
+                  dropLabel={(t("new.upload-banner"))}
                   disabled={showBannerPreview}>
                   {showBannerPreview &&
                     <Image
@@ -578,7 +419,7 @@ export default function (props: any) {
                       uploading={uploadingBanner}
                       removable
                       onRemove={() => { setBanner('') }} />}
-                  </MyDropzone>
+                  </Dropzone>
               </EmptyFrame>
             </Grid>
             <Grid item xs>
@@ -601,10 +442,10 @@ export default function (props: any) {
           <Grid container direction="row" justify="center" alignItems="center" spacing={4}>
             <Grid item>
               <EmptyFrame className={classes.thumbnailFrameSize}>
-                <MyDropzone
+                <Dropzone
                   onDrop={handleThumbnail}
-                  draggingLabel="new.drop-file"
-                  dropLabel="new.upload-thumbnail"
+                  draggingLabel={(t("new.drop-file"))}
+                  dropLabel={(t("new.upload-thumbnail"))}
                   disabled={showThumbnailPreview}>
                   {showThumbnailPreview &&
                     <Image
@@ -615,7 +456,7 @@ export default function (props: any) {
                       uploading={uploadingThumbnail}
                       removable
                       onRemove={() => { setThumbnail('') }} />}
-                  </MyDropzone>
+                  </Dropzone>
               </EmptyFrame>
             </Grid>
             <Grid item xs>
@@ -634,10 +475,13 @@ export default function (props: any) {
             </Grid>
           </Grid>
         </FormSection>
-        <div id="form" style={{ display: 'flex', flexDirection: 'column', width: '40vw', alignItems: "center" }}>
-          <Button variant="contained" color="primary" onClick={uploadDescription} disabled={!complete}>
-            Deploy
+        <Box alignSelf="flex-start" marginTop="40px" marginLeft="24px">
+        <Button variant="contained" color="primary" onClick={uploadDescription} disabled={!complete}>
+            {(t('new.review'))}
         </Button>
+        </Box>
+        <div id="form" style={{ display: 'flex', flexDirection: 'column', width: '40vw', alignItems: "center", alignContent: "start" }}>
+
           {hash && hash.length !== 0 &&
             <Fragment>
               <div>IPFS Hash: {hash}</div>

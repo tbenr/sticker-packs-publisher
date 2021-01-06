@@ -1,44 +1,40 @@
-import React, {Suspense, useReducer, useState} from 'react';
-import { Button, Typography, Grid } from '@material-ui/core';
-import { useTranslation } from 'react-i18next';
-import {
-  BrowserRouter as Router,
-  Switch,
-  Route
-} from "react-router-dom";
-import logo from '../../images/sickers_logo.svg';
-import NewStickerPackForm from '../NewStickerPackForm';
-import EditStickerPack from '../EditStickerPack';
-import NavBar from '../NavBar';
-import Dashboard from '../Dashboard';
-import useStyles from './styles'
-
-
-import { useHistory } from "react-router-dom";
-
+import { TransactionResponse, Web3Provider } from '@ethersproject/providers';
+import { Button, Grid, Typography } from '@material-ui/core';
+import { UnsupportedChainIdError, useWeb3React, Web3ReactProvider } from '@web3-react/core';
+import { UserRejectedRequestError as UserRejectedRequestErrorFrame } from '@web3-react/frame-connector';
 // web3
 import {
   NoEthereumProviderError,
   UserRejectedRequestError as UserRejectedRequestErrorInjected
-} from '@web3-react/injected-connector'
-import { UserRejectedRequestError as UserRejectedRequestErrorWalletConnect } from '@web3-react/walletconnect-connector'
-import { UserRejectedRequestError as UserRejectedRequestErrorFrame } from '@web3-react/frame-connector'
-import { Web3ReactProvider, useWeb3React, UnsupportedChainIdError } from '@web3-react/core'
-import { TransactionResponse, Web3Provider } from '@ethersproject/providers'
-import { useEagerConnect, useInactiveListener } from '../Web3/hooks'
+} from '@web3-react/injected-connector';
+import { UserRejectedRequestError as UserRejectedRequestErrorWalletConnect } from '@web3-react/walletconnect-connector';
+import { SnackbarProvider } from 'notistack';
+import React, { Suspense, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
-  injected,
-  walletconnect,
-  walletlink,
-  ledger,
-  frame,
+  BrowserRouter as Router,
+  Route, Switch, useHistory
+} from "react-router-dom";
+import logo from '../../images/sickers_logo.svg';
+import Dashboard from '../Dashboard';
+import EditStickerPack from '../EditStickerPack';
+import NavBar from '../NavBar';
+import NewStickerPackForm from '../NewStickerPackForm';
+import {
   authereum,
-  fortmatic,
+  fortmatic, frame, injected,
+  ledger,
   portis,
   squarelink,
-  torus
-} from '../Web3/connectors'
-import {StickerStateProvider} from '../Web3/context'
+  torus, walletconnect,
+  walletlink
+} from '../Web3/connectors';
+import { StickerStateProvider } from '../Web3/context';
+import { useEagerConnect, useInactiveListener } from '../Web3/hooks';
+import useStyles from './styles';
+
+
+
 
 enum ConnectorNames {
   Injected = 'Injected',
@@ -198,7 +194,9 @@ function App() {
       <Router>
       <Web3ReactProvider getLibrary={getLibrary}>
       <StickerStateProvider>
+      <SnackbarProvider>
       <Main/>
+      </SnackbarProvider>
       </StickerStateProvider>
       </Web3ReactProvider>
       </Router>

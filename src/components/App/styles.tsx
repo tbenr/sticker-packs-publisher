@@ -27,7 +27,7 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
 
   footerContainer: {
-    position: 'absolute',
+    position: 'fixed',
     left: '1vmin',
     bottom: '1vmin',
     textAlign: 'left',
