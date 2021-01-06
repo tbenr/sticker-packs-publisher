@@ -39,6 +39,7 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
   chip: {
     margin: 2,
+    backgroundColor: theme.palette.common.white
   },
   previewThumbnail: {
     height: '128px',

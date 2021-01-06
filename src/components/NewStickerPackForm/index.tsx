@@ -1,11 +1,12 @@
 import { Contract } from '@ethersproject/contracts';
-import { Box, Button, Chip, createStyles, Divider, Grid, InputBase, InputLabel, Link, MenuItem, Select, Theme, Tooltip, Typography, withStyles } from '@material-ui/core';
+import { Box, Button, Chip, createStyles, Divider, Grid, InputAdornment, InputBase, InputLabel, Link, MenuItem, Select, Theme, Tooltip, Typography, withStyles } from '@material-ui/core';
 import { useWeb3React } from '@web3-react/core';
 import contentHash from 'content-hash';
 import { BigNumber, FixedNumber } from 'ethers';
 import React, { Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ReactComponent as IconHelp } from '../../images/iconHelp.svg';
+import { ReactComponent as IconSNT } from '../../images/iconSNT.svg'
 import { ipfsAdd } from '../../utils/ipfs';
 import EmptyFrame from '../EmptyFrameCard';
 import FormSection from '../FormSection';
@@ -71,18 +72,6 @@ async function uploadFile(name: string, author: string, thumbnail: string, previ
   return ipfsAdd(description);
 }
 
-
-function validateImageWeight(imageFile: any, maxWeight: number) {
-  if (imageFile && imageFile.size) {
-    // Get image size in kilobytes
-    const imageFileKb = imageFile.size / 1024;
-
-    if (imageFileKb > maxWeight) {
-      return `Image size must be less or equal to ${maxWeight}kb`;
-    }
-  }
-};
-
 /** UI **/
 const BootstrapInput = withStyles((theme: Theme) =>
   createStyles({
@@ -90,20 +79,21 @@ const BootstrapInput = withStyles((theme: Theme) =>
       'label + &': {
         marginTop: theme.spacing(1)
       },
-    },
-    input: {
       borderRadius: 8,
-      position: 'relative',
       border: '2px solid transparent',
       backgroundColor: theme.palette.grey[200],
-      fontSize: 15,
-      padding: 16,
       transition: theme.transitions.create(['border', 'border-color']),
-      '&:focus': {
+      '&:focus-within': {
         borderColor: theme.palette.primary.main,
         border: '2px solid',
         borderRadius: 8
       },
+    },
+    input: {
+      position: 'relative',
+      borderRadius: 8,
+      fontSize: 15,
+      padding: 16,
     },
   }),
 )(InputBase);
@@ -229,7 +219,6 @@ export default function (props: any) {
                                           filename: imageFile.name,
                                           errortype: err}), {variant: "error"})
     })
-
   };
 
   const handleBanner = async (files: any[]) => {
@@ -434,6 +423,7 @@ export default function (props: any) {
                   onChange={e => setPrice(e.target.value)}
                   fullWidth
                   id="price"
+                  endAdornment={<InputAdornment position="end" style={{marginRight: 8}}><IconSNT style={{marginRight: 8}}/><Typography>SNT</Typography></InputAdornment>}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
