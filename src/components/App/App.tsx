@@ -194,7 +194,7 @@ function App() {
       <Router>
       <Web3ReactProvider getLibrary={getLibrary}>
       <StickerStateProvider>
-      <SnackbarProvider>
+      <SnackbarProvider anchorOrigin={{horizontal: "right", vertical: "bottom"}} maxSnack={5}>
       <Main/>
       </SnackbarProvider>
       </StickerStateProvider>

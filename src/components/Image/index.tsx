@@ -26,8 +26,10 @@ export default function (props: IProps) {
 
     return (
         <div style={{ position: 'relative' }}
-            onMouseDown={()=>{setShowRemoveIcon(false)}}
-            onClick={(e)=> { e.stopPropagation()}}>
+            onMouseDown={()=>{console.log('div');setShowRemoveIcon(false)}}
+            onClick={(e)=> { e.stopPropagation()}}
+            onMouseEnter={() => { setShowRemoveIcon(true) }}
+            onMouseLeave={() => { setShowRemoveIcon(false) }}>
             {showSpinner &&  <CircularProgress color='secondary'/> 
             ////<Skeleton variant={skeletonVariant} width={width} height={height} />
             }
@@ -43,9 +45,7 @@ export default function (props: IProps) {
                     src={ipfs ? `https://ipfs.io/ipfs/${ipfs}` : src}
                     onLoadStart={() => { setImageStatus("loading") }}
                     onLoad={() => { setImageStatus("loaded") }}
-                    onError={() => { setImageStatus("error") }}
-                    onMouseEnter={() => { setShowRemoveIcon(true) }}
-                    onMouseLeave={() => { setShowRemoveIcon(false) }} />}
+                    onError={() => { setImageStatus("error") }}/>}
             {imageStatus === 'loaded' && removable &&
                 <img src={iconRemove}
                     style={{
@@ -56,8 +56,7 @@ export default function (props: IProps) {
                     }}
                     draggable='false'
                     onClick={(e) => { e.stopPropagation(); if (onRemove) onRemove() }}
-                    onMouseEnter={() => { setShowRemoveIcon(true) }}
-                    onMouseLeave={() => { setShowRemoveIcon(false) }}
+                    onMouseDown={(e)=>{ e.stopPropagation() }}
                 />}
         </div>
     )

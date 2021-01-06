@@ -16,6 +16,7 @@ import { StickerMarketABI, StickerMarketAddresses } from '../Web3/stickerContrac
 import { createMetadataEDN, IMetadata } from '../Web3/stickerMetadata';
 import Dropzone from '../Dropzone'
 import useStyles from './styles';
+import { useSnackbar } from 'notistack';
 
 const categories: any = {
   '0x00000001': 'adult',
@@ -123,7 +124,7 @@ export default function (props: any) {
   const [stickers, setStickers] = useState<string[]>([]);
   const [hash, setHash] = useState("");
 
-  const [fileObjects, setFileObjects] = useState([]);
+  const { enqueueSnackbar } = useSnackbar();
 
   const { account, chainId, library } = useWeb3React()
 
@@ -169,43 +170,137 @@ export default function (props: any) {
       .registerPack(web3.utils.toWei(price), donate, category, account, finalContentHash, 0).send({"from": account} );*/
   };
 
-  const handleThumbnail = async (files: any) => {
+  const validateImg = function(imageFile: any, constraint: any) {
+    return new Promise<void>((resolve,reject) => {
+
+      if (imageFile) {
+        const localImageUrl = URL.createObjectURL(imageFile);
+        const imageObject = new window.Image();
+        imageObject.onerror = () => {reject(t('new.error-type-load'))}
+        imageObject.onload = () => {
+          imageFile.width = imageObject.naturalWidth;
+          imageFile.height = imageObject.naturalHeight;
+          URL.revokeObjectURL(imageFile);
+
+          // validation
+
+          // Get image size in kilobytes
+          if(imageFile.size > constraint.maxSize ) return reject(t('new.error-type-size'));
+
+          // mime
+          if (!constraint.mimeFormats.includes(imageFile.type)) return reject(t('new.error-type-mime'));
+
+          // dimensions
+          if (imageFile.height !== constraint.height) return reject(t('new.error-type-dimension'));
+          if (imageFile.width !== constraint.width) return reject(t('new.error-type-dimension'));
+
+          resolve(); 
+        };
+        imageObject.src = localImageUrl;
+      }
+      else reject(t('new.error-type-load'));
+    });
+  }
+
+  const handleThumbnail = async (files: any[]) => {
+    if(files.length == 0) {
+      enqueueSnackbar(t('new.error-drop-one-file'),{variant: "info"})
+      return null;
+    }
+
     let imageFile = files[0];
-   /* if (imageFile) {
-      const localImageUrl = URL.createObjectURL(imageFile);
-      const imageObject = new window.Image();
-
-      imageObject.onload = () => {
-        imageFile.width = imageObject.naturalWidth;
-        imageFile.height = imageObject.naturalHeight;
-        URL.revokeObjectURL(imageFile);
-      };
-      imageObject.src = localImageUrl;
-    }*/
-
     setThumbnail("");
-    setUploadingThumbnail(true);
-    ipfsAdd(imageFile).then(hash => {
-      setThumbnail(hash);
+
+    return validateImg(imageFile,thumbnailLimits).then(async ()=> {
+      setUploadingThumbnail(true);
+      try {
+        const hash = await ipfsAdd(imageFile);
+        setThumbnail(hash);
+      } catch (e) {
+        setBanner("");
+        enqueueSnackbar(t('new.error-ipfs-uploading', { filename: imageFile.name }), { variant: "error" });
+      } finally {
+        setUploadingThumbnail(false);
+      }
+    }).catch((err) => {
+      setThumbnail("");
       setUploadingThumbnail(false);
-    });
-  };
-
-  const handleBanner = async (files: any) => {
-    setBanner("");
-    setUploadingBanner(true);
-    ipfsAdd(files[0]).then(hash => {
-      setBanner(hash)
-      setUploadingBanner(false);
-    });
-  };
-
-  const handleStickers = async (files: string[]) => {
-    setUploadingStickers(files.length);
-    Promise.all(files.map(ipfsAdd)).then(all => {
-      setUploadingStickers(0);
-      setUploadedStickers(all.map((hash: string) => hash));
+      enqueueSnackbar(t('new.error-base',{type: t('new.error-type-thumbnail'),
+                                          filename: imageFile.name,
+                                          errortype: err}), {variant: "error"})
     })
+
+  };
+
+  const handleBanner = async (files: any[]) => {
+    if (files.length == 0) {
+      enqueueSnackbar(t('new.error-drop-one-file'), { variant: "info" })
+      return null;
+    }
+
+    let imageFile = files[0];
+    setBanner("");
+
+    return validateImg(imageFile, bannerLimits).then(async () => {
+      setUploadingBanner(true);
+      try {
+        const hash = await ipfsAdd(imageFile);
+        setBanner(hash);
+      } catch (e) {
+        setBanner("");
+        enqueueSnackbar(t('new.error-ipfs-uploading', { filename: imageFile.name }), { variant: "error" });
+      } finally {
+        setUploadingBanner(false);
+      }
+    }).catch((err) => {
+      setBanner("");
+      setUploadingBanner(false);
+      enqueueSnackbar(t('new.error-base', {
+        type: t('new.error-type-banner'),
+        filename: imageFile.name,
+        errortype: err
+      }), { variant: "error" })
+    })
+  };
+
+  const handleStickers = async (files: any[]) => {
+    return Promise.allSettled(files.map(file => { return validateImg(file, stickersLimits) }))
+      .then(async validationResults => {
+        let validated: any[] = [];
+
+        validationResults.forEach((result, idx) => {
+          if (result.status === 'fulfilled') {
+            validated.push(files[idx])
+          } else {
+            enqueueSnackbar(t('new.error-base', {
+              type: t('new.error-type-stickers'),
+              filename: files[idx].name,
+              errortype: result.reason
+            }), { variant: "error" })
+          }
+        })
+
+        // set uploading UI
+        setUploadingStickers(validated.length);
+
+        const results = await Promise.allSettled(validated.map(ipfsAdd));
+        let uploaded: any[] = results.filter((result_1, idx_1) => {
+          if (result_1.status === 'rejected') {
+            enqueueSnackbar(t('new.error-ipfs-uploading', { filename: validated[idx_1].name }), { variant: "error" });
+            return false;
+          }
+          if (stickers.includes(hash)) {
+            enqueueSnackbar(t('new.error-sticker-already-present', { filename: validated[idx_1].name }), { variant: "warning" });
+            return false;
+          }
+          return true;
+        });
+
+        // unset uploading UI
+        setUploadingStickers(0);
+        // set uploaded stickers
+        setUploadedStickers(uploaded);
+      })
   };
 
   React.useEffect(() => {
@@ -407,6 +502,7 @@ export default function (props: any) {
               <EmptyFrame className={classes.bannerFrameSize}>
                 <Dropzone
                   onDrop={handleBanner}
+                  multiple={false}
                   draggingLabel={(t("new.drop-file"))}
                   dropLabel={(t("new.upload-banner"))}
                   disabled={showBannerPreview}>

@@ -53,7 +53,18 @@
         "thumbnail-description4": "size banner in ",
         "thumbnail-description5": "JPG or PNG ",
         "thumbnail-description6": "format.",
-        "review": "Review sticker pack"
+        "review": "Review sticker pack",
+        "error-base": "{{type}} ({{filename}}) is not valid: {{errortype}}",
+        "error-type-banner": "Banner",
+        "error-type-thumbnail": "Thumbnail",
+        "error-type-stickers": "A sticker",
+        "error-type-load": "error loading file",
+        "error-type-size": "file too big",
+        "error-type-dimension": "wrong image dimensions",
+        "error-type-mime": "wrong image type",
+        "error-drop-one-file": "choose one and only one file",
+        "error-sticker-already-present": "Sticker {{filename}} already uploaded",
+        "error-ipfs-uploading": "Error uploading {{filename}} to ipfs"
     },
     "show-example": "Show example",
     "terms-and-conditions": "Terms and Conditions."
