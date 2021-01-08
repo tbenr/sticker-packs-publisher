@@ -27,6 +27,8 @@
         "meta-stickerpack-name": "Name your sticker pack",
         "meta-category": "Select category",
         "meta-address": "Ethereum address or ENS domain to receive SNT",
+        "meta-address-placeholder": "eg. 0x1234...",
+        "use-connected-wallet": "Use connected wallet",
         "meta-limit-installs": "Limit installs of sticker pack",
         "meta-limit-installs-tooltip": "If you want to create scarcity to your pack you can limit how many users can install it in Status.",
         "meta-price": "Pack price",

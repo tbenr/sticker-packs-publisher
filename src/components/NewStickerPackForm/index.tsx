@@ -147,10 +147,6 @@ export default function (props: any) {
     }
   };
 
-  React.useEffect(() => {
-    setAddress(account ? account : '');
-  }, [account])
-
   const register = async (_: any) => {
     const donate = 0;
     const fee = 0;
@@ -402,10 +398,14 @@ export default function (props: any) {
                   {t('new.meta-address')}
                 </InputLabel>
                 <BootstrapInput
+                  placeholder={t('new.meta-address-placeholder')}
                   value={address}
                   onChange={e => setAddress(e.target.value)}
                   fullWidth
                   id="address"
+                  endAdornment={address == '' && <InputAdornment position="end" style={{marginRight: 8}}>
+                    <Button variant="outlined" color="primary" onClick={()=>{setAddress(account ? account : '')}}>{t('new.use-connected-wallet')}
+                    </Button></InputAdornment>}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
