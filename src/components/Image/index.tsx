@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { CircularProgress, StandardProps } from '@material-ui/core';
+import { Box, CircularProgress, Typography } from '@material-ui/core';
 //import { Skeleton } from '@material-ui/lab';
 
 import iconRemove from '../../images/iconRemove.svg';
+import { useTranslation } from 'react-i18next';
+import theme from '../../theme';
 
 type IProps = {
     width: number,
@@ -18,6 +20,7 @@ type IProps = {
 
 export default function (props: IProps) {
     const { ipfs, src, removable, width, height, onRemove, borderRadius, uploading} = props;
+    const { t } = useTranslation();
     const [imageStatus, setImageStatus] = useState<'loading'|'loaded'|'error'>('loading');
     const [showRemoveIcon, setShowRemoveIcon] = useState(false);
  
@@ -33,7 +36,7 @@ export default function (props: IProps) {
             {showSpinner &&  <CircularProgress color='secondary'/> 
             ////<Skeleton variant={skeletonVariant} width={width} height={height} />
             }
-            {renderImg &&
+            {renderImg && imageStatus !== 'error' &&
                 <img style={{
                     width: width,
                     height: height,
@@ -46,7 +49,11 @@ export default function (props: IProps) {
                     onLoadStart={() => { setImageStatus("loading") }}
                     onLoad={() => { setImageStatus("loaded") }}
                     onError={() => { setImageStatus("error") }}/>}
-            {imageStatus === 'loaded' && removable &&
+            {renderImg && imageStatus === 'error' &&
+                <Box border={1} borderRadius={16} borderColor={theme.palette.error.main} display="flex" justifyContent="center" alignItems="center" width={width} height= {height}>
+                    <Typography color="error">{t(ipfs ? 'error-loading-img-ipfs' : 'error-loading-img')}</Typography>
+                </Box>}
+            {(imageStatus === 'loaded' || imageStatus === 'error') && removable &&
                 <img src={iconRemove}
                     style={{
                         position: 'absolute',

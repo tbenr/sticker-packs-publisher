@@ -12,7 +12,9 @@ interface MyDropzoneProps {
     dropLabel: string,
     draggingLabel: string,
     disabled?: boolean | false,
-    multiple?: boolean | false
+    multiple?: boolean | false,
+    width?: number | string | "100%",
+    height?: number | string | "100%",
 }
 
 export default function MyDropzone(
@@ -20,13 +22,13 @@ export default function MyDropzone(
 ) {
     const classes = useStylesCommon();
 
-    const { multiple, onDrop, disabled, children, dropLabel, draggingLabel } = props;
+    const { multiple, onDrop, disabled, children, dropLabel, draggingLabel, width, height  } = props;
     const dropzoneprops: DropzoneOptions = { onDrop, disabled, multiple }
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone(dropzoneprops)
 
     return (
-        <Box position="relative" height="100%" width="100%" style={{ outline: 'none' }} {...getRootProps()}>
+        <Box position="relative" height={height} width={width} style={{ outline: 'none' }} {...getRootProps()}>
             <input {...getInputProps()} />
             <Box height="100%" width="100%" display="flex" justifyContent="center" alignItems="center" >
                 {children !== undefined && children}

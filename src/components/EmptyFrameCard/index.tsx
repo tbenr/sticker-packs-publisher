@@ -7,7 +7,7 @@ import styles from './styles';
 interface IProps extends WithStyles<typeof styles> {
     children: any
     classes: any
-    className?: any 
+    className?: any
 }
 
 export default withStyles(styles, { withTheme: true })(class extends Component<IProps> {

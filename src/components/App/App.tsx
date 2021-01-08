@@ -64,11 +64,13 @@ const connectorsByName: { [connectorName in ConnectorNames]: any } = {
 
 
 // loading component for suspense fallback
-const Loader = () => (
+function Loader() {
+  const classes = useStyles();
+  return (
   <div className="App">
-    <div>...loading...</div>
+    <img src={logo} className={classes.homeLogo} alt="logo"/>
   </div>
-);
+  )}
 
 function Footer() {
   const classes = useStyles();

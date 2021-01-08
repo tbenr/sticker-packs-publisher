@@ -39,6 +39,8 @@
         "stckers-description4": "Each sticker must be ",
         "stckers-description5": "exactly 280x280 pixel and max 400kb.",
         "stckers-description6": "Please follow the guidelines of our ",
+        "stckers-upload-more_plural": "Upload at least {{count}} more stickers",
+        "stckers-upload-more": "Upload at least another sticker",
         "banner-title": "Sticker Market Banner",
         "banner-description1": "A good banner showcases your stickers, helping your pack to stand out.",
         "banner-description2": "Upload an ",
@@ -64,8 +66,11 @@
         "error-type-mime": "wrong image type",
         "error-drop-one-file": "choose one and only one file",
         "error-sticker-already-present": "Sticker {{filename}} already uploaded",
-        "error-ipfs-uploading": "Error uploading {{filename}} to ipfs"
+        "error-ipfs-uploading": "Error uploading {{filename}} to ipfs",
+        "error-max-stickers-reached": "Maximum number of stickers reached"
     },
+    "error-loading-img": "Error loading image",
+    "error-loading-img-ipfs": "Error loading image from ipfs",
     "show-example": "Show example",
     "terms-and-conditions": "Terms and Conditions."
 }

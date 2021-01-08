@@ -35,8 +35,12 @@ const categories: any = {
 /** validations and utility functions **/
 
 // this must be multiple of 4
-const min_stickers: number = 12;
-const max_stickers: number = 36;
+const minStickers: number = 12;
+const maxStickers: number = 36;
+
+const stickerGridColumns = 4;
+const stickerGridWidth = 462;
+const stickerGridRowHeight = 115;
 
 const stickersLimits = {
   mimeFormats: ['image/gif', 'image/png'],
@@ -57,19 +61,6 @@ const thumbnailLimits = {
   width: 128,
   height: 128,
   maxSize: 200 * 1024
-}
-
-async function uploadFile(name: string, author: string, thumbnail: string, preview: string, stickers: string[]) {
-  const m: IMetadata = {
-    name: name,
-    author: author,
-    preview: contentHash.fromIpfs(preview),
-    thumbnail: contentHash.fromIpfs(thumbnail),
-    stickers: stickers.map(s => { return { hash: contentHash.fromIpfs(s) } })
-  }
-  const description = createMetadataEDN(m);
-
-  return ipfsAdd(description);
 }
 
 /** UI **/
@@ -104,7 +95,9 @@ export default function (props: any) {
   const [category, setCategory] = React.useState<string[]>([]);
   const [author, setAuthor] = useState("");
   const [address, setAddress] = useState("");
-  const [price, setPrice] = useState("0");
+  const [installations, setInstallations] = useState<number>(-1);
+  const [contribution, setContribution] = useState<number>(0);
+  const [price, setPrice] = useState<number>(0);
   const [thumbnail, setThumbnail] = useState("");
   const [uploadingThumbnail, setUploadingThumbnail] = useState<boolean>(false);
   const [banner, setBanner] = useState("");
@@ -112,7 +105,7 @@ export default function (props: any) {
   const [uploadingStickers, setUploadingStickers] = useState<number>(0);
   const [uploadedStickers, setUploadedStickers] = useState<string[]>([]);
   const [stickers, setStickers] = useState<string[]>([]);
-  const [hash, setHash] = useState("");
+  const [metadataHash, setMetadataHash] = useState("");
 
   const { enqueueSnackbar } = useSnackbar();
 
@@ -139,8 +132,17 @@ export default function (props: any) {
   };
 
   const uploadDescription = async (_: any) => {
-    const hash = await uploadFile(name, author, thumbnail, banner, uploadedStickers);
-    setHash(hash);
+    const m: IMetadata = {
+      name: name,
+      author: author,
+      preview: contentHash.fromIpfs(banner),
+      thumbnail: contentHash.fromIpfs(thumbnail),
+      stickers: stickers.map(s => { return { hash: contentHash.fromIpfs(s) } })
+    }
+    const description = createMetadataEDN(m);
+  
+    const hash = await ipfsAdd(description);
+    setMetadataHash(hash);
   };
 
   React.useEffect(() => {
@@ -150,7 +152,7 @@ export default function (props: any) {
   const register = async (_: any) => {
     const donate = 0;
     const fee = 0;
-    const finalContentHash = "0x" + contentHash.fromIpfs(hash);
+    const finalContentHash = "0x" + contentHash.fromIpfs(metadataHash);
 
     let smc = new Contract(StickerMarketAddresses[chainId as number], StickerMarketABI, library.getSigner(account).connectUnchecked());
     let tmp = BigNumber.from(10).pow(18).mul(price);
@@ -207,7 +209,7 @@ export default function (props: any) {
         const hash = await ipfsAdd(imageFile);
         setThumbnail(hash);
       } catch (e) {
-        setBanner("");
+        setThumbnail("");
         enqueueSnackbar(t('new.error-ipfs-uploading', { filename: imageFile.name }), { variant: "error" });
       } finally {
         setUploadingThumbnail(false);
@@ -253,14 +255,25 @@ export default function (props: any) {
   };
 
   const handleStickers = async (files: any[]) => {
+    const stickersInExcess = stickers.length + files.length - maxStickers
+
+    if(stickersInExcess > 0) {
+      const toRemoveFromUploading = Math.min(stickersInExcess, files.length)
+      files.splice(files.length-toRemoveFromUploading,toRemoveFromUploading)
+      enqueueSnackbar(t('new.error-max-stickers-reached'), { variant: "warning" })
+    }
+
+    // run validation on all files
     return Promise.allSettled(files.map(file => { return validateImg(file, stickersLimits) }))
       .then(async validationResults => {
         let validated: any[] = [];
 
+        // check validation results
         validationResults.forEach((result, idx) => {
           if (result.status === 'fulfilled') {
             validated.push(files[idx])
           } else {
+            // show an arror for all rejections
             enqueueSnackbar(t('new.error-base', {
               type: t('new.error-type-stickers'),
               filename: files[idx].name,
@@ -272,18 +285,22 @@ export default function (props: any) {
         // set uploading UI
         setUploadingStickers(validated.length);
 
+        // upload all valid stickers
         const results = await Promise.allSettled(validated.map(ipfsAdd));
-        let uploaded: any[] = results.filter((result_1, idx_1) => {
-          if (result_1.status === 'rejected') {
-            enqueueSnackbar(t('new.error-ipfs-uploading', { filename: validated[idx_1].name }), { variant: "error" });
-            return false;
+
+        // get only uploaded stickers not already uploaded
+        const uploaded: any[] = results.reduce((uploaded, ipfsResult, ipfsIdx) => {
+          if (ipfsResult.status === 'rejected') {
+            enqueueSnackbar(t('new.error-ipfs-uploading', { filename: validated[ipfsIdx].name }), { variant: "error" });
+            return uploaded;
           }
-          if (stickers.includes(hash)) {
-            enqueueSnackbar(t('new.error-sticker-already-present', { filename: validated[idx_1].name }), { variant: "warning" });
-            return false;
+          if (stickers.includes(ipfsResult.value)) {
+            enqueueSnackbar(t('new.error-sticker-already-present', { filename: validated[ipfsIdx].name }), { variant: "warning" });
+            return uploaded;
           }
-          return true;
-        });
+          uploaded.push(ipfsResult.value)
+          return uploaded;
+        }, [] as string[])
 
         // unset uploading UI
         setUploadingStickers(0);
@@ -296,11 +313,19 @@ export default function (props: any) {
     setStickers(stickers.concat(uploadedStickers))
   }, [uploadedStickers])
 
+  const stickerGridRows = Math.ceil((Math.max(stickers.length + uploadingStickers, minStickers) ) / 4);
+
+  console.log("stickerGridRows: " + stickerGridRows);
+  console.log("stickers.length: " + stickers.length);
+  console.log("uploadingStickers: " + uploadingStickers);
+
+  const stickersToBeUploaded = minStickers - stickers.length;
+
   const complete = name.length !== 0 &&
     author.length !== 0 &&
     thumbnail.length !== 0 &&
     banner.length !== 0 &&
-    stickers.length >= min_stickers;
+    stickers.length >= minStickers;
 
   const showBannerPreview = banner.length > 0 || uploadingBanner
   const showThumbnailPreview = thumbnail.length > 0 || uploadingThumbnail
@@ -403,6 +428,8 @@ export default function (props: any) {
                 <Select
                   labelId="select-limit-installs-label"
                   id="select-limit-installs"
+                  value={installations}
+                  onChange={e => setInstallations(parseInt(e.target.value as string))}
                   MenuProps={{ elevation: 1 }}
                   input={<BootstrapInput fullWidth />}>
                   <MenuItem value={-1}>Unlimited</MenuItem>
@@ -419,8 +446,12 @@ export default function (props: any) {
                   {t('new.meta-price')}
                 </InputLabel>
                 <BootstrapInput
+                  type="number"
                   value={price}
-                  onChange={e => setPrice(e.target.value)}
+                  onBlur={()=> {if(isNaN(price)) setPrice(0)}}
+                  onChange={e => {
+                    const v = Math.max(0,parseFloat(e.target.value));
+                    setPrice(v)}}
                   fullWidth
                   id="price"
                   endAdornment={<InputAdornment position="end" style={{marginRight: 8}}><IconSNT style={{marginRight: 8}}/><Typography>SNT</Typography></InputAdornment>}
@@ -444,6 +475,8 @@ export default function (props: any) {
                 <Select
                   labelId="select-contribution-label"
                   id="select-contribution"
+                  value={contribution}
+                  onChange={e => setContribution(parseInt(e.target.value as string))}
                   MenuProps={{ elevation: 1 }}
                   input={<BootstrapInput fullWidth />}>
                   <MenuItem value={0}>0%</MenuItem>
@@ -458,17 +491,28 @@ export default function (props: any) {
         <FormSection index={2} title={t('new.stickers-title')}>
           <Grid container direction="row" justify="center" alignItems="center" spacing={4}>
             <Grid item>
-              <EmptyFrame className={classes.stickerFrameSize}>
+              <EmptyFrame>
                 <Dropzone
+                  width={stickerGridWidth}
+                  height={stickerGridRowHeight*stickerGridRows}
                   onDrop={handleStickers}
                   multiple={true}
                   draggingLabel={(t("new.drop-files"))}
                   dropLabel={(t("new.upload-stickers"))}
-                  disabled={uploadedStickers.length === max_stickers}>
+                  disabled={uploadedStickers.length === maxStickers}>
                   {showStickersPreview &&
-                    <StickersDndGrid stickers={stickers} setStickers={setStickers} uploading={uploadingStickers} />}
+                    <StickersDndGrid
+                    width={stickerGridWidth-2}
+                    height={stickerGridRowHeight*stickerGridRows}
+                    columns={stickerGridColumns}
+                    rows={stickerGridRows}
+                    stickers={stickers}
+                    setStickers={setStickers}
+                    uploading={uploadingStickers} />}
                 </Dropzone>
               </EmptyFrame>
+              {stickersToBeUploaded > 0 &&
+                <Typography style={{marginTop: 8, marginLeft: 4}} variant="subtitle2" color="textSecondary">{(t('new.stckers-upload-more',{count: stickersToBeUploaded}))}</Typography>}
             </Grid>
             <Grid item xs>
               <Typography variant="subtitle2" color="textSecondary" paragraph>{t('new.stckers-description1')}
@@ -568,10 +612,10 @@ export default function (props: any) {
         </Box>
         <div id="form" style={{ display: 'flex', flexDirection: 'column', width: '40vw', alignItems: "center", alignContent: "start" }}>
 
-          {hash && hash.length !== 0 &&
+          {metadataHash && metadataHash.length !== 0 &&
             <Fragment>
-              <div>IPFS Hash: {hash}</div>
-              <a href={'https://ipfs.infura.io/ipfs/' + hash}>link</a>
+              <div>IPFS Hash: {metadataHash}</div>
+              <a href={'https://ipfs.infura.io/ipfs/' + metadataHash}>link</a>
               <Button variant="contained" color="primary" onClick={register}>
                 Publish
             </Button>

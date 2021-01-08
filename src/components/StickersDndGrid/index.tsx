@@ -10,24 +10,24 @@ import { ReactComponent as IconUpload } from '../../images/iconUpload.svg';
 
 export default function StickersPreview(props:
     {
+      columns: number,
+      rows: number,
+      width: number,
+      height: number,
       stickers: string[],
       uploading: number,
       setStickers: (arg1: string[]) => void
     }) {
-    const { stickers, setStickers, uploading } = props;
-    const width = 460;
-    const height = 343;
+    const { stickers, setStickers, uploading, width, height, columns, rows } = props;
   
     const classes = useStyles();
     const { t } = useTranslation();
   
     const grid_vert_lines_x: number[] = [];
-    const columns = 4;
     const vDivsSpace = width / columns
     for (let i = 1; i < columns; i++) grid_vert_lines_x.push(vDivsSpace * i)
   
     const grid_vert_lines_y: number[] = [];
-    const rows = 3;
     const hDivsSpace = height / rows
     for (let i = 1; i < rows; i++) grid_vert_lines_y.push(hDivsSpace * i)
   
@@ -57,6 +57,8 @@ export default function StickersPreview(props:
           id="items"
           boxesPerRow={columns}
           rowHeight={hDivsSpace}
+          disableDrag={uploading>0}
+          disableDrop={uploading>0}
           style={{ height: height, width: width }}
         >
           {stickers.map(item => (
@@ -68,7 +70,7 @@ export default function StickersPreview(props:
           ))}
           {[
             ...Array(uploading),
-          ].map((value: undefined, idx: number) => (
+          ].map((_, idx: number) => (
             <GridItem key={`upl_${idx}`}>
               <Box height="100%" width="100%" display="flex" justifyContent="center" alignItems="center" >
                 <Image removable width={88} height={88} borderRadius={16} uploading={true} />
@@ -78,7 +80,7 @@ export default function StickersPreview(props:
           }
           {[
                 ...Array(remaining_elements),
-            ].map((value: undefined, idx: number) => (
+            ].map((_, idx: number) => (
               <div key={`rem_${idx}`} style={{position:'absolute',
                                               top: Math.floor(((upload_arrow_idx+idx)/columns))*hDivsSpace,
                                               left: ((upload_arrow_idx+idx)%columns)*vDivsSpace,

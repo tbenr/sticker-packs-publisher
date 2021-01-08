@@ -38,7 +38,8 @@ const useStyles = makeStyles((theme: Theme) => ({
     flexWrap: 'wrap',
   },
   chip: {
-    margin: 2,
+    marginLeft: 2,
+    marginRight: 2,
     backgroundColor: theme.palette.common.white
   },
   previewThumbnail: {
