@@ -103,7 +103,6 @@ export default function (props: any) {
   const [banner, setBanner] = useState("");
   const [uploadingBanner, setUploadingBanner] = useState<boolean>(false);
   const [uploadingStickers, setUploadingStickers] = useState<number>(0);
-  const [uploadedStickers, setUploadedStickers] = useState<string[]>([]);
   const [stickers, setStickers] = useState<string[]>([]);
   const [metadataHash, setMetadataHash] = useState("");
 
@@ -120,9 +119,8 @@ export default function (props: any) {
     console.log('thumbnail: ', thumbnail);
     console.log('uploadingBanner: ', uploadingBanner);
     console.log('uploadingStickers: ', uploadingStickers);
-    console.log('uploadedStickers: ', uploadedStickers);
     console.log('stickers: ', stickers);
-  }, [stickerState, thumbnail, uploadingBanner, uploadingStickers, uploadedStickers, stickers])
+  }, [stickerState, thumbnail, uploadingBanner, uploadingStickers, stickers])
 
   const classes = useStyles();
   const { t } = useTranslation();
@@ -141,8 +139,12 @@ export default function (props: any) {
     }
     const description = createMetadataEDN(m);
   
-    const hash = await ipfsAdd(description);
-    setMetadataHash(hash);
+    try {
+      const hash = await ipfsAdd(description);
+      setMetadataHash(hash);
+    } catch (e) {
+      enqueueSnackbar(t('new.error-ipfs-uploading', { filename: 'metadata', error: e }), { variant: "error" });
+    }
   };
 
   React.useEffect(() => {
@@ -210,7 +212,7 @@ export default function (props: any) {
         setThumbnail(hash);
       } catch (e) {
         setThumbnail("");
-        enqueueSnackbar(t('new.error-ipfs-uploading', { filename: imageFile.name }), { variant: "error" });
+        enqueueSnackbar(t('new.error-ipfs-uploading', { filename: imageFile.name, error: e }), { variant: "error" });
       } finally {
         setUploadingThumbnail(false);
       }
@@ -239,7 +241,7 @@ export default function (props: any) {
         setBanner(hash);
       } catch (e) {
         setBanner("");
-        enqueueSnackbar(t('new.error-ipfs-uploading', { filename: imageFile.name }), { variant: "error" });
+        enqueueSnackbar(t('new.error-ipfs-uploading', { filename: imageFile.name, error: e }), { variant: "error" });
       } finally {
         setUploadingBanner(false);
       }
@@ -291,7 +293,7 @@ export default function (props: any) {
         // get only uploaded stickers not already uploaded
         const uploaded: any[] = results.reduce((uploaded, ipfsResult, ipfsIdx) => {
           if (ipfsResult.status === 'rejected') {
-            enqueueSnackbar(t('new.error-ipfs-uploading', { filename: validated[ipfsIdx].name }), { variant: "error" });
+            enqueueSnackbar(t('new.error-ipfs-uploading', { filename: validated[ipfsIdx].name, error: ipfsResult.reason }), { variant: "error" });
             return uploaded;
           }
           if (stickers.includes(ipfsResult.value)) {
@@ -305,15 +307,11 @@ export default function (props: any) {
         // unset uploading UI
         setUploadingStickers(0);
         // set uploaded stickers
-        setUploadedStickers(uploaded);
+        setStickers(stickers.concat(uploaded));
       })
   };
 
-  React.useEffect(() => {
-    setStickers(stickers.concat(uploadedStickers))
-  }, [uploadedStickers])
-
-  const stickerGridRows = Math.ceil((Math.max(stickers.length + uploadingStickers, minStickers) ) / 4);
+  const stickerGridRows = Math.ceil((Math.max(stickers.length + uploadingStickers + 1, minStickers) ) / 4);
 
   console.log("stickerGridRows: " + stickerGridRows);
   console.log("stickers.length: " + stickers.length);
@@ -499,7 +497,7 @@ export default function (props: any) {
                   multiple={true}
                   draggingLabel={(t("new.drop-files"))}
                   dropLabel={(t("new.upload-stickers"))}
-                  disabled={uploadedStickers.length === maxStickers}>
+                  disabled={stickers.length === maxStickers || uploadingStickers > 0}>
                   {showStickersPreview &&
                     <StickersDndGrid
                     width={stickerGridWidth-2}

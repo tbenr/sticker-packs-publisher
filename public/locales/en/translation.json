@@ -66,7 +66,7 @@
         "error-type-mime": "wrong image type",
         "error-drop-one-file": "choose one and only one file",
         "error-sticker-already-present": "Sticker {{filename}} already uploaded",
-        "error-ipfs-uploading": "Error uploading {{filename}} to ipfs",
+        "error-ipfs-uploading": "Error uploading {{filename}} to ipfs ({{error}})",
         "error-max-stickers-reached": "Maximum number of stickers reached"
     },
     "error-loading-img": "Error loading image",

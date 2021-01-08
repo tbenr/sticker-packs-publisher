@@ -8,7 +8,7 @@ async function ipfsAdd(content: string | Blob) {
     if (response.status === 200) {
         return response.json().then((json) => {return Promise.resolve(json.Hash)})
     }
-    return Promise.reject();
+    return Promise.reject(`[${response.status}] ${response.statusText}`);
 }
 
 export { ipfsAdd }
