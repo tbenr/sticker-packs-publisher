@@ -1,57 +1,63 @@
 import React, { useState } from 'react';
 import { Box, CircularProgress, Typography } from '@material-ui/core';
-//import { Skeleton } from '@material-ui/lab';
 
 import iconRemove from '../../images/iconRemove.svg';
 import { useTranslation } from 'react-i18next';
 import theme from '../../theme';
+import { CSSProperties } from '@material-ui/core/styles/withStyles';
 
 type IProps = {
-    width: number,
-    height: number,
-    borderRadius: number,
+    style: CSSProperties,
     ipfs?: string,
     src?: string,
-    //skeletonVariant?: 'rect' | 'text' | 'circle',
     removable?: boolean | false,
+    hide?: boolean | false
     uploading?: boolean | false, //controls loading state from parent (uploading?)
-    onRemove?: () => void;
+    onRemove?: () => void,
+    onError?: () => void,
+    onLoad?: () => void,
 }
 
 export default function (props: IProps) {
-    const { ipfs, src, removable, width, height, onRemove, borderRadius, uploading} = props;
+    const { ipfs, src, removable, onRemove, onError, uploading, onLoad, style, hide } = props;
     const { t } = useTranslation();
-    const [imageStatus, setImageStatus] = useState<'loading'|'loaded'|'error'>('loading');
+    const [imageStatus, setImageStatus] = useState<'loading' | 'loaded' | 'error'>('loading');
     const [showRemoveIcon, setShowRemoveIcon] = useState(false);
- 
+
     const showSpinner = imageStatus === 'loading' || uploading;
     const renderImg = !uploading && (ipfs || src);
 
     return (
-        <div style={{ position: 'relative' }}
-            onMouseDown={()=>{console.log('div');setShowRemoveIcon(false)}}
-            onClick={(e)=> { e.stopPropagation()}}
+        <div style={{ position: 'relative', display: hide ? 'none' : undefined}}
+            onMouseDown={() => { setShowRemoveIcon(false) }}
+            onClick={(e) => { e.stopPropagation() }}
             onMouseEnter={() => { setShowRemoveIcon(true) }}
             onMouseLeave={() => { setShowRemoveIcon(false) }}>
-            {showSpinner &&  <CircularProgress color='secondary'/> 
-            ////<Skeleton variant={skeletonVariant} width={width} height={height} />
-            }
+            {showSpinner && <CircularProgress color='secondary' />}
             {renderImg && imageStatus !== 'error' &&
                 <img style={{
-                    width: width,
-                    height: height,
-                    borderRadius: borderRadius,
                     objectFit: 'contain',
-                    display: imageStatus !== 'loaded' ? 'none' : ''
+                    display: imageStatus !== 'loaded' ? 'none' : 'block',
+                    ...style
                 }}
                     draggable='false'
                     src={ipfs ? `https://ipfs.io/ipfs/${ipfs}` : src}
                     onLoadStart={() => { setImageStatus("loading") }}
-                    onLoad={() => { setImageStatus("loaded") }}
-                    onError={() => { setImageStatus("error") }}/>}
+                    onLoad={() => { setImageStatus("loaded"); if(onLoad) onLoad() }}
+                    onError={() => { onError ? onError() : setImageStatus("error") }} />}
             {renderImg && imageStatus === 'error' &&
-                <Box border={1} borderRadius={16} borderColor={theme.palette.error.main} display="flex" justifyContent="center" alignItems="center" width={width} height= {height}>
-                    <Typography color="error">{t(ipfs ? 'error-loading-img-ipfs' : 'error-loading-img')}</Typography>
+                <Box
+                    width={style.width}
+                    height={style.height}
+                    border={1}
+                    borderRadius={style.borderRadius}
+                    borderColor={theme.palette.error.main}
+                    display="flex"
+                    justifyContent="center"
+                    alignItems="center">
+                    <Typography align="center" color="error">
+                        {t(ipfs ? 'error-loading-img-ipfs' : 'error-loading-img')}
+                    </Typography>
                 </Box>}
             {(imageStatus === 'loaded' || imageStatus === 'error') && removable &&
                 <img src={iconRemove}
@@ -63,7 +69,7 @@ export default function (props: IProps) {
                     }}
                     draggable='false'
                     onClick={(e) => { e.stopPropagation(); if (onRemove) onRemove() }}
-                    onMouseDown={(e)=>{ e.stopPropagation() }}
+                    onMouseDown={(e) => { e.stopPropagation() }}
                 />}
         </div>
     )

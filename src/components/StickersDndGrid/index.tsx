@@ -15,10 +15,11 @@ export default function StickersPreview(props:
       width: number,
       height: number,
       stickers: string[],
-      uploading: number,
-      setStickers: (arg1: string[]) => void
+      uploading?: number,
+      locked?: boolean,
+      setStickers?: (arg1: string[]) => void
     }) {
-    const { stickers, setStickers, uploading, width, height, columns, rows } = props;
+    const { stickers, setStickers, uploading = 0, width, height, columns, rows, locked = false } = props;
   
     const classes = useStyles();
     const { t } = useTranslation();
@@ -43,12 +44,12 @@ export default function StickersPreview(props:
       targetIndex: number,
       targetId?: string) {
       const nextState = swap(stickers, sourceIndex, targetIndex);
-      setStickers(nextState);
+      if(setStickers) setStickers(nextState);
     }
   
     function onRemove(valueToRemove: string) {
       const nextState = stickers.filter((value) => {return value !== valueToRemove})
-      setStickers(nextState);
+      if(setStickers) setStickers(nextState);
     }
   
     return (
@@ -57,14 +58,14 @@ export default function StickersPreview(props:
           id="items"
           boxesPerRow={columns}
           rowHeight={hDivsSpace}
-          disableDrag={uploading>0}
-          disableDrop={uploading>0}
+          disableDrag={uploading>0 || locked}
+          disableDrop={uploading>0 || locked}
           style={{ height: height, width: width }}
         >
           {stickers.map(item => (
             <GridItem key={item}>
               <Box height="100%" width="100%" display="flex" justifyContent="center" alignItems="center" >
-                <Image removable onRemove={()=>{onRemove(item)}} width={88} height={88} borderRadius={16} ipfs={item} />
+                <Image removable={!locked} onRemove={()=>{onRemove(item)}} style={{width: 88, height: 88, borderRadius: 16}} ipfs={item} />
               </Box>
             </GridItem>
           ))}
@@ -73,12 +74,12 @@ export default function StickersPreview(props:
           ].map((_, idx: number) => (
             <GridItem key={`upl_${idx}`}>
               <Box height="100%" width="100%" display="flex" justifyContent="center" alignItems="center" >
-                <Image removable width={88} height={88} borderRadius={16} uploading={true} />
+                <Image removable style={{width: 88, height: 88, borderRadius: 16}} uploading={true} />
               </Box>
             </GridItem>
           ))
           }
-          {[
+          {!locked && [
                 ...Array(remaining_elements),
             ].map((_, idx: number) => (
               <div key={`rem_${idx}`} style={{position:'absolute',

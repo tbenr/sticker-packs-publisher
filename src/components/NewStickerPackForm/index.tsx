@@ -11,6 +11,7 @@ import { ipfsAdd } from '../../utils/ipfs';
 import EmptyFrame from '../EmptyFrameCard';
 import FormSection from '../FormSection';
 import StickersDndGrid from '../StickersDndGrid'
+import ConfirmationDialog from '../NewStickerPackConfirmationDialog'
 import Image from '../Image';
 import { useStickerDispatch, useStickerState } from '../Web3/context';
 import { StickerMarketABI, StickerMarketAddresses } from '../Web3/stickerContracts';
@@ -104,7 +105,8 @@ export default function (props: any) {
   const [uploadingBanner, setUploadingBanner] = useState<boolean>(false);
   const [uploadingStickers, setUploadingStickers] = useState<number>(0);
   const [stickers, setStickers] = useState<string[]>([]);
-  const [metadataHash, setMetadataHash] = useState("");
+
+  const [confirmationOpen, setConfirmationOpen] = useState<boolean>(false);
 
   const { enqueueSnackbar } = useSnackbar();
 
@@ -129,7 +131,7 @@ export default function (props: any) {
     setCategory(event.target.value as string[]);
   };
 
-  const uploadDescription = async (_: any) => {
+  const uploadMetadataAndSign = async () => {
     const m: IMetadata = {
       name: name,
       author: author,
@@ -137,27 +139,25 @@ export default function (props: any) {
       thumbnail: contentHash.fromIpfs(thumbnail),
       stickers: stickers.map(s => { return { hash: contentHash.fromIpfs(s) } })
     }
-    const description = createMetadataEDN(m);
-  
-    try {
-      const hash = await ipfsAdd(description);
-      setMetadataHash(hash);
-    } catch (e) {
-      enqueueSnackbar(t('new.error-ipfs-uploading', { filename: 'metadata', error: e }), { variant: "error" });
-    }
-  };
 
-  const register = async (_: any) => {
-    const donate = 0;
-    const fee = 0;
-    const finalContentHash = "0x" + contentHash.fromIpfs(metadataHash);
+    const metadata = createMetadataEDN(m);
 
-    let smc = new Contract(StickerMarketAddresses[chainId as number], StickerMarketABI, library.getSigner(account).connectUnchecked());
-    let tmp = BigNumber.from(10).pow(18).mul(price);
-    let p = FixedNumber.fromValue(tmp, 18);
-    smc.registerPack(p, donate, category, account, finalContentHash, 0)
-    /*web3.eth.Contract(StickerMarketABI, StickerTypeAddresses[chainId]).methods
-      .registerPack(web3.utils.toWei(price), donate, category, account, finalContentHash, 0).send({"from": account} );*/
+
+    return ipfsAdd(metadata)
+      .catch(e => {
+        enqueueSnackbar(t('publish.error-ipfs-uploading', { error: e }), { variant: "error" });
+      }).then(hash => {
+        const finalContentHash = "0x" + contentHash.fromIpfs(hash);
+
+        let smc = new Contract(StickerMarketAddresses[chainId as number], StickerMarketABI, library.getSigner(account).connectUnchecked());
+        let tmp = BigNumber.from(10).pow(18).mul(price);
+        let p = FixedNumber.fromValue(tmp, 18);
+        smc.registerPack(p, contribution, category, account, finalContentHash, 0)
+
+
+      }).catch(e => {
+        enqueueSnackbar(t('publish.error-tx-sign', { error: e }), { variant: "error" });
+      })
   };
 
   const validateImg = function(imageFile: any, constraint: any) {
@@ -541,9 +541,7 @@ export default function (props: any) {
                   {showBannerPreview &&
                     <Image
                       ipfs={banner}
-                      width={266}
-                      height={175}
-                      borderRadius={16}
+                      style={{width: 266, height: 175, borderRadius: 16}}
                       uploading={uploadingBanner}
                       removable
                       onRemove={() => { setBanner('') }} />}
@@ -578,9 +576,7 @@ export default function (props: any) {
                   {showThumbnailPreview &&
                     <Image
                       ipfs={thumbnail}
-                      width={128}
-                      height={128}
-                      borderRadius={128}
+                      style={{width: 128, height: 128, borderRadius: 128}}
                       uploading={uploadingThumbnail}
                       removable
                       onRemove={() => { setThumbnail('') }} />}
@@ -604,22 +600,25 @@ export default function (props: any) {
           </Grid>
         </FormSection>
         <Box alignSelf="flex-start" marginTop="40px" marginLeft="24px">
-        <Button variant="contained" color="primary" onClick={uploadDescription} disabled={!complete}>
+        <Button variant="contained" color="primary" onClick={()=>{setConfirmationOpen(true)}} disabled={!complete}>
             {(t('new.review'))}
         </Button>
         </Box>
-        <div id="form" style={{ display: 'flex', flexDirection: 'column', width: '40vw', alignItems: "center", alignContent: "start" }}>
-
-          {metadataHash && metadataHash.length !== 0 &&
-            <Fragment>
-              <div>IPFS Hash: {metadataHash}</div>
-              <a href={'https://ipfs.infura.io/ipfs/' + metadataHash}>link</a>
-              <Button variant="contained" color="primary" onClick={register}>
-                Publish
-            </Button>
-            </Fragment>
-          }
-        </div>
       </Box>
+      <Button onClick={()=>{setConfirmationOpen(true)}}>open</Button>
+      <ConfirmationDialog
+        name={name}
+        address={address}
+        stickers={stickers}
+        author={author}
+        category={categories}
+        installations={installations}
+        contribution={contribution}
+        thumbnail={thumbnail}
+        banner={banner}
+        open={confirmationOpen}
+        price={price}
+        onCancel={()=>{setConfirmationOpen(false)}}
+        onConfirm={()=>{uploadMetadataAndSign()}}/>
     </Box>);
 };
