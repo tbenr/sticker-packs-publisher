@@ -7,6 +7,7 @@ import { Contract } from '@ethersproject/contracts'
 import { utils } from 'ethers'
 
 import { injected } from './connectors'
+import { useStickerDispatch, useStickerState } from './context'
 
 export function useEagerConnect() {
   const { activate, active } = useWeb3React()
@@ -23,7 +24,7 @@ export function useEagerConnect() {
         setTried(true)
       }
     })
-  }, []) // intentionally only running on mount (make sure it's only mounted once :))
+  }, [activate]) // intentionally only running on mount (make sure it's only mounted once :))
 
   // if the connection worked, wait until we get confirmation of that to flip the flag
   useEffect(() => {
@@ -86,6 +87,7 @@ interface IStickerPacks {
 
 export function useFetchMyStickerPackIds() {
   const { account, chainId, library } = useWeb3React()
+  const { SuccessStickersCount } = useStickerState();
   const [error, setError] = useState<string | undefined>()
   const [loading, setLoading] = useState<boolean>(true)
   const [myStickerPackIds, setMyStickerPackIds] = useState<number[]>([])
@@ -123,7 +125,7 @@ export function useFetchMyStickerPackIds() {
         setError(e)
       });
     }
-  }, [account, library, chainId])
+  }, [account, library, chainId, SuccessStickersCount])
 
   return { loading: loading, myStickerPackIds: myStickerPackIds, error: error }
 }
@@ -147,7 +149,7 @@ export function useFetchStickerPackSummary(packId: number | undefined) {
         let contenthash = packSummary[2];
         let ipfshash = contentHash.decode(contenthash)
 
-        fetch(`https://ipfs.io/ipfs/${ipfshash}`)
+        return fetch(`https://ipfs.io/ipfs/${ipfshash}`)
           .then((resp: any) => resp.text())
           .then(metadataEDN => {
             let packSummary = parseMetadataEDN(metadataEDN);
@@ -206,4 +208,35 @@ export function useFetchPaymentData(packId: number | undefined) {
   }, [library, chainId, packId])
 
   return { loading: loading, paymentData: paymentData, error: error }
+}
+
+export function useUpdatePendingStickers(lastBlock: number) {
+  const dispatch = useStickerDispatch()
+  const { PendingStickers } = useStickerState();
+  const { chainId, library } = useWeb3React()
+  const [loading, setLoading] = useState<boolean>(true)
+
+  useEffect((): any => {
+    if (!!library) {
+      setLoading(true);
+
+      let stc = new Contract(StickerTypeAddresses[chainId as number], StickerTypeABI, library);
+
+      PendingStickers.forEach(PendingSticker => {
+        library.getTransactionReceipt(PendingSticker.tx.hash)
+          .then((receipt: { status: number }) => {
+            if (receipt) {
+              if(receipt.status === 1) {
+                dispatch({type: 'REMOVE_PENDING_STICKER', tx: PendingSticker.tx})
+              } else {
+                dispatch({type: 'MOVE_PENDING_STICKER_TO_FAILED', tx: PendingSticker.tx})
+              }
+            }})
+      })
+    } else {
+      setLoading(false)
+    }
+  }, [library, chainId, lastBlock])
+
+  return { loading: loading }
 }

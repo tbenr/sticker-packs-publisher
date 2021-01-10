@@ -4,6 +4,7 @@ import React, { Dispatch, SetStateAction, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import NewStickerPackCard from '../NewStickerPackCard'
 import StickerPackCard from '../StickerPackCard'
+import { useStickerState } from '../Web3/context';
 import {useFetchMyStickerPackIds} from '../Web3/hooks'
 
 import useStyles from './styles'
@@ -22,28 +23,17 @@ function TopCard(props: any) {
     )
 }
 
-     /*   <Grid container direction="row" justify="center" alignItems="center">
-            <Grid item>*/
-
-
-interface DProps {
-    pendingTxs: TransactionResponse[],
-    setPendingTxs: Dispatch<SetStateAction<TransactionResponse[]>>
-}
-
-export default function (props:DProps) {
-    const { t } = useTranslation();
+export default function () {
     const classes = useStyles();
-    const {pendingTxs} = props;
 
-    const {loading, myStickerPackIds } = useFetchMyStickerPackIds()
+    const { loading, myStickerPackIds } = useFetchMyStickerPackIds()
+    const { PendingStickers } = useStickerState();
 
-    if(loading) return (<>fetching stickers</>)
+    if (loading) return (<>fetching stickers</>)
 
     return (
-/*   <Grid container direction="row" justify="center" alignItems="center">
-            <Grid item>*/
-            <>
+        <>
+            {/* statistics not yet available
             <Grid className={classes.topBarContainer} container direction="row" justify="center" alignItems="center" spacing={2}>
                 <Grid item>
                     <TopCard label={t('dashboard.sold-sticker')} text="120" />
@@ -55,17 +45,28 @@ export default function (props:DProps) {
                     <TopCard label={t('dashboard.contribution-to-status')} text="340.7876" snt />
                 </Grid>
             </Grid>
-            <Grid className={classes.stickerCardsContainer} container direction="row" alignContent="flex-start" justify="center" alignItems="flex-start" spacing={2}>
-                {myStickerPackIds.map((packId) => 
+            */}
+            <Grid className={classes.stickerCardsContainer} container direction="row" alignContent="flex-start" justify="center" alignItems="flex-start" spacing={4}>
+                {myStickerPackIds.map((packId) =>
                     <Grid key={packId} item>
-                    <StickerPackCard packId={packId}/>
+                        <StickerPackCard packId={packId} />
                     </Grid>)}
-                {pendingTxs.map((tx) => <div>{tx.confirmations + ' ' + tx.hash}</div>)}
+                {PendingStickers.map(sticker =>
+                    <Grid key={sticker.tx.hash} item>
+                        <StickerPackCard preview={{
+                            price: sticker.price,
+                            author: sticker.author,
+                            name: sticker.name,
+                            thumbnail: sticker.thumbnail,
+                            banner: sticker.banner
+                        }}
+                            pending={true} />
+                    </Grid>
+                )}
                 <Grid item>
-                    <NewStickerPackCard/>
+                    <NewStickerPackCard />
                 </Grid>
             </Grid>
         </>
     )
-
 }

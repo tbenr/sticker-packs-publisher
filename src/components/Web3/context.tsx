@@ -1,21 +1,68 @@
 import React from 'react';
 import {createContext, useReducer} from 'react';
 
-type Action = {type: 'increment'} | {type: 'decrement'}
-type State = {count: number}
+import { TransactionResponse } from '@ethersproject/providers';
+
+type NewStickerTx = {
+  author: string,
+  name: string,
+  categories: string[],
+  address: string,
+  installations: number,
+  contribution: number,
+  thumbnail: string,
+  banner: string,
+  price: number,
+  stickers: string[],
+  metadata: string,
+  tx: TransactionResponse
+}
+
+type Action = {type: 'ADD_PENDING_STICKER', newStickerTx: NewStickerTx} |
+              {type: 'REMOVE_PENDING_STICKER', tx: TransactionResponse} |
+              {type: 'MOVE_PENDING_STICKER_TO_FAILED', tx: TransactionResponse}
+
+type State = {
+  LastBlockNumber: number,
+  PendingStickers: NewStickerTx[],
+  FailedStickers: NewStickerTx[],
+  SuccessStickersCount: number
+}
+
 type Dispatch = (action: Action) => void
 
 const initialState: State = {
-    count: 0
+  LastBlockNumber: 0,
+  PendingStickers: [],
+  FailedStickers: [],
+  SuccessStickersCount: 0
 }
 
-function countReducer(state: State, action: Action) {
+function stickerReducer(state: State, action: Action) : State {
     switch (action.type) {
-      case 'increment': {
-        return {count: state.count + 1}
+      case 'ADD_PENDING_STICKER': {
+        return {
+          ...state,
+          PendingStickers: [
+            ...state.PendingStickers,
+            action.newStickerTx
+          ]
+        }
       }
-      case 'decrement': {
-        return {count: state.count - 1}
+      case 'REMOVE_PENDING_STICKER': {
+        return {
+          ...state,
+          PendingStickers: state.PendingStickers.filter(ps => ps.tx.hash !== action.tx.hash),
+          SuccessStickersCount: state.SuccessStickersCount + 1
+        }
+      }
+      case 'MOVE_PENDING_STICKER_TO_FAILED': {
+        const stToMove = state.PendingStickers.filter(ps => ps.tx.hash === action.tx.hash)
+        return {
+          ...state,
+          PendingStickers: state.PendingStickers.filter(ps => ps.tx.hash !== action.tx.hash),
+          FailedStickers: state.FailedStickers.concat(stToMove)
+        }
       }
       default: {
         throw new Error('Unhandled action type')
@@ -29,7 +76,7 @@ const StickerDispatchContext = createContext<Dispatch | undefined>(undefined)
 
 
 const StickerStateProvider = ( { children } : any ) => {
-    const [state, dispatch] = useReducer(countReducer, initialState);
+    const [state, dispatch] = useReducer(stickerReducer, initialState);
   
     return <StickerContext.Provider value={ state }>
         <StickerDispatchContext.Provider value ={ dispatch }>
@@ -41,14 +88,14 @@ const StickerStateProvider = ( { children } : any ) => {
   function useStickerState() {
     const context = React.useContext(StickerContext)
     if (context === undefined) {
-      throw new Error('useCountState must be used within a CountProvider')
+      throw new Error('useCountState must be used within a StickerStateProvider')
     }
     return context
   }
   function useStickerDispatch() {
     const context = React.useContext(StickerDispatchContext)
     if (context === undefined) {
-      throw new Error('useCountDispatch must be used within a CountProvider')
+      throw new Error('useCountDispatch must be used within a StickerStateProvider')
     }
     return context
   }

@@ -3,7 +3,7 @@ import { Box, Button, Chip, createStyles, Divider, Grid, InputAdornment, InputBa
 import { useWeb3React } from '@web3-react/core';
 import contentHash from 'content-hash';
 import { BigNumber, FixedNumber } from 'ethers';
-import React, { Fragment, useState } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ReactComponent as IconHelp } from '../../images/iconHelp.svg';
 import { ReactComponent as IconSNT } from '../../images/iconSNT.svg'
@@ -13,25 +13,14 @@ import FormSection from '../FormSection';
 import StickersDndGrid from '../StickersDndGrid'
 import ConfirmationDialog from '../NewStickerPackConfirmationDialog'
 import Image from '../Image';
-import { useStickerDispatch, useStickerState } from '../Web3/context';
+import { useStickerDispatch } from '../Web3/context';
 import { StickerMarketABI, StickerMarketAddresses } from '../Web3/stickerContracts';
-import { createMetadataEDN, IMetadata } from '../Web3/stickerMetadata';
+import { createMetadataEDN, IMetadata, AvailableCategories } from '../Web3/stickerMetadata';
 import Dropzone from '../Dropzone'
 import useStyles from './styles';
 import { useSnackbar } from 'notistack';
-
-const categories: any = {
-  '0x00000001': 'adult',
-  '0x00000002': 'animals',
-  '0x00000003': 'cartoons',
-  '0x00000004': 'crypto',
-  '0x00000005': 'events',
-  '0x00000006': 'food',
-  '0x00000007': 'love',
-  '0x00000008': 'sport',
-  '0x00000009': 'travel',
-  '0x00000000': 'other'
-}
+import { TransactionResponse } from '@ethersproject/providers';
+import { useHistory } from 'react-router-dom';
 
 /** validations and utility functions **/
 
@@ -93,7 +82,7 @@ const BootstrapInput = withStyles((theme: Theme) =>
 
 export default function (props: any) {
   const [name, setName] = useState("");
-  const [category, setCategory] = React.useState<string[]>([]);
+  const [categories, setCategories] = React.useState<string[]>([]);
   const [author, setAuthor] = useState("");
   const [address, setAddress] = useState("");
   const [installations, setInstallations] = useState<number>(-1);
@@ -105,30 +94,29 @@ export default function (props: any) {
   const [uploadingBanner, setUploadingBanner] = useState<boolean>(false);
   const [uploadingStickers, setUploadingStickers] = useState<number>(0);
   const [stickers, setStickers] = useState<string[]>([]);
+  const [complete, setComplete] = useState<boolean>(false);
 
   const [confirmationOpen, setConfirmationOpen] = useState<boolean>(false);
 
   const { enqueueSnackbar } = useSnackbar();
 
   const { account, chainId, library } = useWeb3React()
-
-  const stickerState = useStickerState();
   const dispatch = useStickerDispatch();
 
-  // test
   React.useEffect(() => {
-    console.log('state: ', stickerState);
-    console.log('thumbnail: ', thumbnail);
-    console.log('uploadingBanner: ', uploadingBanner);
-    console.log('uploadingStickers: ', uploadingStickers);
-    console.log('stickers: ', stickers);
-  }, [stickerState, thumbnail, uploadingBanner, uploadingStickers, stickers])
+    setComplete(name.length !== 0 &&
+      author.length !== 0 &&
+      thumbnail.length !== 0 &&
+      banner.length !== 0 &&
+      stickers.length >= minStickers)
+  }, [name, author, thumbnail, banner, stickers])
 
+  const history = useHistory();
   const classes = useStyles();
   const { t } = useTranslation();
 
   const handleChangeCategory = (event: React.ChangeEvent<{ value: unknown }>) => {
-    setCategory(event.target.value as string[]);
+    setCategories(event.target.value as string[]);
   };
 
   const uploadMetadataAndSign = async () => {
@@ -147,12 +135,46 @@ export default function (props: any) {
       .catch(e => {
         enqueueSnackbar(t('publish.error-ipfs-uploading', { error: e }), { variant: "error" });
       }).then(hash => {
+
         const finalContentHash = "0x" + contentHash.fromIpfs(hash);
 
         let smc = new Contract(StickerMarketAddresses[chainId as number], StickerMarketABI, library.getSigner(account).connectUnchecked());
         let tmp = BigNumber.from(10).pow(18).mul(price);
         let p = FixedNumber.fromValue(tmp, 18);
-        smc.registerPack(p, contribution, category, account, finalContentHash, 0)
+        smc.registerPack(p, contribution, categories, account, finalContentHash, 0).then((response: TransactionResponse) => {
+          console.log(response);
+          dispatch({
+            type: 'ADD_PENDING_STICKER',
+            newStickerTx: {
+              author: author,
+              name: name,
+              categories: categories,
+              address: address,
+              installations: installations,
+              contribution: contribution,
+              thumbnail: thumbnail,
+              banner: banner,
+              price: price,
+              stickers: stickers,
+              metadata: hash,
+              tx: response
+            }
+          })
+          history.push('/dashboard/');
+          return library.waitForTransaction(response.hash).then((receipt: { status: number; }) => {
+            if(receipt.status === 1) {
+              dispatch({
+                type: 'REMOVE_PENDING_STICKER',
+                tx: response
+              })
+            } else return Promise.reject()
+          }).catch(() => {
+            dispatch({
+              type: 'MOVE_PENDING_STICKER_TO_FAILED',
+              tx: response
+            })
+          });
+        })
 
 
       }).catch(e => {
@@ -309,17 +331,7 @@ export default function (props: any) {
 
   const stickerGridRows = Math.ceil((Math.max(stickers.length + uploadingStickers + 1, minStickers) ) / 4);
 
-  console.log("stickerGridRows: " + stickerGridRows);
-  console.log("stickers.length: " + stickers.length);
-  console.log("uploadingStickers: " + uploadingStickers);
-
   const stickersToBeUploaded = minStickers - stickers.length;
-
-  const complete = name.length !== 0 &&
-    author.length !== 0 &&
-    thumbnail.length !== 0 &&
-    banner.length !== 0 &&
-    stickers.length >= minStickers;
 
   const showBannerPreview = banner.length > 0 || uploadingBanner
   const showThumbnailPreview = thumbnail.length > 0 || uploadingThumbnail
@@ -369,7 +381,7 @@ export default function (props: any) {
                 <Select
                   labelId="select-category-label"
                   id="select-category"
-                  value={category}
+                  value={categories}
                   onChange={handleChangeCategory}
                   multiple
                   MenuProps={{ elevation: 1 }}
@@ -377,13 +389,13 @@ export default function (props: any) {
                   renderValue={(selected) => (
                     <div className={classes.chips}>
                       {(selected as string[]).map((value) => (
-                        <Chip key={value} label={categories[value]} className={classes.chip} />
+                        <Chip key={value} label={AvailableCategories[value]} className={classes.chip} />
                       ))}
                     </div>
                   )}>
-                  {Object.keys(categories).map((id) => (
+                  {Object.keys(AvailableCategories).map((id) => (
                     <MenuItem key={id} value={id}>
-                      {categories[id]}
+                      {AvailableCategories[id]}
                     </MenuItem>
                   ))}
                 </Select>

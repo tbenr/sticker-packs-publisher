@@ -10,16 +10,16 @@ type IProps = {
     style: CSSProperties,
     ipfs?: string,
     src?: string,
-    removable?: boolean | false,
-    hide?: boolean | false
-    uploading?: boolean | false, //controls loading state from parent (uploading?)
+    removable?: boolean,
+    hide?: boolean,
+    uploading?: boolean, //controls loading state from parent (uploading?)
     onRemove?: () => void,
     onError?: () => void,
     onLoad?: () => void,
 }
 
 export default function (props: IProps) {
-    const { ipfs, src, removable, onRemove, onError, uploading, onLoad, style, hide } = props;
+    const { ipfs, src, removable = false, onRemove, onError, uploading = false, onLoad, style, hide = false} = props;
     const { t } = useTranslation();
     const [imageStatus, setImageStatus] = useState<'loading' | 'loaded' | 'error'>('loading');
     const [showRemoveIcon, setShowRemoveIcon] = useState(false);

@@ -42,7 +42,18 @@ const useStyles = makeStyles((theme: Theme) => ({
     },
     priceIcon: {
       marginRight: '8px'
-    }
+    },
+  pendingContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '40px',
+    height: '40px',
+    borderRadius: '40px',
+    marginRight: '14px',
+    color: theme.palette.grey[400],
+    backgroundColor: theme.palette.grey[200]
+  }
   }))
 
   export default useStyles;

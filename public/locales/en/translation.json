@@ -79,6 +79,7 @@
         "error-ipfs-uploading": "Error uploading metadata to ipfs ({{error}})",
         "error-tx-sign": "Error signing tansaction ({{error}})"
     },
+    "publising": "Publishing...",
     "error-loading-img": "Error loading image",
     "error-loading-img-ipfs": "Error loading image from ipfs",
     "show-example": "Show example",

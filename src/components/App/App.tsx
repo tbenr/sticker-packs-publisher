@@ -9,7 +9,7 @@ import {
 } from '@web3-react/injected-connector';
 import { UserRejectedRequestError as UserRejectedRequestErrorWalletConnect } from '@web3-react/walletconnect-connector';
 import { SnackbarProvider } from 'notistack';
-import React, { Suspense, useState } from 'react';
+import React, { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   BrowserRouter as Router,
@@ -29,7 +29,7 @@ import {
   torus, walletconnect,
   walletlink
 } from '../Web3/connectors';
-import { StickerStateProvider } from '../Web3/context';
+import { StickerStateProvider, useStickerDispatch, useStickerState } from '../Web3/context';
 import { useEagerConnect, useInactiveListener } from '../Web3/hooks';
 import useStyles from './styles';
 
@@ -138,8 +138,7 @@ function getLibrary(provider: any): Web3Provider {
 function Main() {
   const context = useWeb3React<Web3Provider>()
   const history = useHistory();
-  const [pendingTxs, setPendingTxs] = useState<TransactionResponse[]>([]);
-  const { account, connector, active, error, activate, library } = context
+  const { account, connector, active, error, activate } = context
 
   // handle logic to recognize the connector currently being activated
   const [activatingConnector, setActivatingConnector] = React.useState<any>()
@@ -173,10 +172,10 @@ function Main() {
         <div style={{marginTop: 8}}>
         <Switch>
           <Route path="/dashboard/">
-            <Dashboard pendingTxs={pendingTxs} setPendingTxs={setPendingTxs}/>
+            <Dashboard/>
           </Route>
           <Route path="/new/">
-            <NewStickerPackForm pendingTxs={pendingTxs} setPendingTxs={setPendingTxs}/>
+            <NewStickerPackForm/>
           </Route>
           <Route path="/edit/:packId">
             <EditStickerPack/>
