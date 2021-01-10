@@ -1,13 +1,11 @@
+import { AppBar, Divider, Grid } from '@material-ui/core';
 import React from 'react';
-import { useTranslation } from 'react-i18next';
-import { Divider, AppBar, Grid, Container } from '@material-ui/core';
+import logo from '../../images/sickers_logo.svg';
+import WalletStatus from '../WalletStatus';
 import useStyles from './styles';
 
-import logo from '../../images/sickers_logo.svg';
-import WalletStatus from '../WalletStatus'
 
-export default function () {
-    const { t } = useTranslation();
+export default function NavBar() {
     const classes = useStyles();
 
     return (

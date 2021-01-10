@@ -13,7 +13,7 @@ import EmptyFrame from '../EmptyFrameCard';
 import theme from '../../theme';
 
 
-export default function () {
+export default function NewStickerPackCard() {
     const { t } = useTranslation();
     const classes = useStyles();
     const commonClasses = useStylesCommon();

@@ -1,14 +1,12 @@
-import { TransactionResponse } from '@ethersproject/providers';
-import { Box, Paper, Card, Typography, CardContent, Grid } from '@material-ui/core';
-import React, { Dispatch, SetStateAction, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import NewStickerPackCard from '../NewStickerPackCard'
-import StickerPackCard from '../StickerPackCard'
+import { Grid, Typography } from '@material-ui/core';
+import React from 'react';
+import NewStickerPackCard from '../NewStickerPackCard';
+import StickerPackCard from '../StickerPackCard';
 import { useStickerState } from '../Web3/context';
-import {useFetchMyStickerPackIds} from '../Web3/hooks'
+import { useFetchMyStickerPackIds } from '../Web3/hooks';
+import useStyles from './styles';
 
-import useStyles from './styles'
-
+/* statistics not yet available
 function TopCard(props: any) {
     const classes = useStyles();
     return (
@@ -22,14 +20,13 @@ function TopCard(props: any) {
         </Card>
     )
 }
+*/
 
-export default function () {
+export default function Dashboard() {
     const classes = useStyles();
 
     const { loading, myStickerPackIds } = useFetchMyStickerPackIds()
     const { PendingStickers } = useStickerState();
-
-    if (loading) return (<>fetching stickers</>)
 
     return (
         <>
@@ -60,9 +57,13 @@ export default function () {
                             thumbnail: sticker.thumbnail,
                             banner: sticker.banner
                         }}
-                            pending={true} />
+                            txPending={true} />
                     </Grid>
                 )}
+                {loading &&
+                    <Grid key='loading' item>
+                        <StickerPackCard skeleton={true}/>
+                    </Grid>}
                 <Grid item>
                     <NewStickerPackCard />
                 </Grid>

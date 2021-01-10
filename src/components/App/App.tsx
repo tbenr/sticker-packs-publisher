@@ -1,4 +1,4 @@
-import { TransactionResponse, Web3Provider } from '@ethersproject/providers';
+import { Web3Provider } from '@ethersproject/providers';
 import { Button, Grid, Typography } from '@material-ui/core';
 import { UnsupportedChainIdError, useWeb3React, Web3ReactProvider } from '@web3-react/core';
 import { UserRejectedRequestError as UserRejectedRequestErrorFrame } from '@web3-react/frame-connector';
@@ -29,12 +29,9 @@ import {
   torus, walletconnect,
   walletlink
 } from '../Web3/connectors';
-import { StickerStateProvider, useStickerDispatch, useStickerState } from '../Web3/context';
+import { StickerStateProvider } from '../Web3/context';
 import { useEagerConnect, useInactiveListener } from '../Web3/hooks';
 import useStyles from './styles';
-
-
-
 
 enum ConnectorNames {
   Injected = 'Injected',
@@ -169,7 +166,7 @@ function Main() {
       {(active === true) &&
         <>
         <NavBar/>
-        <div style={{marginTop: 8}}>
+        <div style={{marginTop: 8, marginBottom: 8}}>
         <Switch>
           <Route path="/dashboard/">
             <Dashboard/>

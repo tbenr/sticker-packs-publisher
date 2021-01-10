@@ -74,7 +74,7 @@ export default function StickersPreview(props:
           ].map((_, idx: number) => (
             <GridItem key={`upl_${idx}`}>
               <Box height="100%" width="100%" display="flex" justifyContent="center" alignItems="center" >
-                <Image removable style={{width: 88, height: 88, borderRadius: 16}} uploading={true} />
+                <Image removable style={{width: 88, height: 88, borderRadius: 16}} loading={true} />
               </Box>
             </GridItem>
           ))

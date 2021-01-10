@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Box, CircularProgress, Typography } from '@material-ui/core';
+import Skeleton from '@material-ui/lab/Skeleton';
 
 import iconRemove from '../../images/iconRemove.svg';
 import { useTranslation } from 'react-i18next';
@@ -12,14 +13,24 @@ type IProps = {
     src?: string,
     removable?: boolean,
     hide?: boolean,
-    uploading?: boolean, //controls loading state from parent (uploading?)
+    loading?: boolean, //controls loading state from parent (uploading?)
+    loadingStyle?: 'circle' | 'skeleton',
     onRemove?: () => void,
     onError?: () => void,
     onLoad?: () => void,
 }
 
-export default function (props: IProps) {
-    const { ipfs, src, removable = false, onRemove, onError, uploading = false, onLoad, style, hide = false} = props;
+export default function Image(props: IProps) {
+    const { ipfs,
+        src,
+        removable = false,
+        onRemove,
+        onError,
+        loading: uploading = false,
+        onLoad,
+        style,
+        hide = false,
+        loadingStyle = 'circle'} = props;
     const { t } = useTranslation();
     const [imageStatus, setImageStatus] = useState<'loading' | 'loaded' | 'error'>('loading');
     const [showRemoveIcon, setShowRemoveIcon] = useState(false);
@@ -33,7 +44,12 @@ export default function (props: IProps) {
             onClick={(e) => { e.stopPropagation() }}
             onMouseEnter={() => { setShowRemoveIcon(true) }}
             onMouseLeave={() => { setShowRemoveIcon(false) }}>
-            {showSpinner && <CircularProgress color='secondary' />}
+            {showSpinner && loadingStyle === 'circle' &&
+                <CircularProgress color='secondary' />
+            }
+            {showSpinner && loadingStyle === 'skeleton' &&
+                <Skeleton variant='rect' animation="wave" style={style}/>
+            }
             {renderImg && imageStatus !== 'error' &&
                 <img style={{
                     objectFit: 'contain',

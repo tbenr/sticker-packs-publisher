@@ -1,26 +1,26 @@
 import { Contract } from '@ethersproject/contracts';
+import { TransactionResponse } from '@ethersproject/providers';
 import { Box, Button, Chip, createStyles, Divider, Grid, InputAdornment, InputBase, InputLabel, Link, MenuItem, Select, Theme, Tooltip, Typography, withStyles } from '@material-ui/core';
 import { useWeb3React } from '@web3-react/core';
 import contentHash from 'content-hash';
 import { BigNumber, FixedNumber } from 'ethers';
+import { useSnackbar } from 'notistack';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useHistory } from 'react-router-dom';
 import { ReactComponent as IconHelp } from '../../images/iconHelp.svg';
-import { ReactComponent as IconSNT } from '../../images/iconSNT.svg'
+import { ReactComponent as IconSNT } from '../../images/iconSNT.svg';
 import { ipfsAdd } from '../../utils/ipfs';
+import Dropzone from '../Dropzone';
 import EmptyFrame from '../EmptyFrameCard';
 import FormSection from '../FormSection';
-import StickersDndGrid from '../StickersDndGrid'
-import ConfirmationDialog from '../NewStickerPackConfirmationDialog'
 import Image from '../Image';
+import ConfirmationDialog from '../NewStickerPackConfirmationDialog';
+import StickersDndGrid from '../StickersDndGrid';
 import { useStickerDispatch } from '../Web3/context';
 import { StickerMarketABI, StickerMarketAddresses } from '../Web3/stickerContracts';
-import { createMetadataEDN, IMetadata, AvailableCategories } from '../Web3/stickerMetadata';
-import Dropzone from '../Dropzone'
+import { AvailableCategories, createMetadataEDN, IMetadata } from '../Web3/stickerMetadata';
 import useStyles from './styles';
-import { useSnackbar } from 'notistack';
-import { TransactionResponse } from '@ethersproject/providers';
-import { useHistory } from 'react-router-dom';
 
 /** validations and utility functions **/
 
@@ -80,7 +80,7 @@ const BootstrapInput = withStyles((theme: Theme) =>
 )(InputBase);
 
 
-export default function (props: any) {
+export default function NewStickerPackForm() {
   const [name, setName] = useState("");
   const [categories, setCategories] = React.useState<string[]>([]);
   const [author, setAuthor] = useState("");
@@ -140,8 +140,10 @@ export default function (props: any) {
 
         let smc = new Contract(StickerMarketAddresses[chainId as number], StickerMarketABI, library.getSigner(account).connectUnchecked());
         let tmp = BigNumber.from(10).pow(18).mul(price);
-        let p = FixedNumber.fromValue(tmp, 18);
-        smc.registerPack(p, contribution, categories, account, finalContentHash, 0).then((response: TransactionResponse) => {
+        let priceP18 = FixedNumber.fromValue(tmp, 18);
+
+        // fees are currently set to 0
+        smc.registerPack(priceP18, contribution, categories, account, finalContentHash, 0).then((response: TransactionResponse) => {
           console.log(response);
           dispatch({
             type: 'ADD_PENDING_STICKER',
@@ -215,7 +217,7 @@ export default function (props: any) {
   }
 
   const handleThumbnail = async (files: any[]) => {
-    if(files.length == 0) {
+    if(files.length === 0) {
       enqueueSnackbar(t('new.error-drop-one-file'),{variant: "info"})
       return null;
     }
@@ -244,7 +246,7 @@ export default function (props: any) {
   };
 
   const handleBanner = async (files: any[]) => {
-    if (files.length == 0) {
+    if (files.length === 0) {
       enqueueSnackbar(t('new.error-drop-one-file'), { variant: "info" })
       return null;
     }
@@ -415,7 +417,7 @@ export default function (props: any) {
                   onChange={e => setAddress(e.target.value)}
                   fullWidth
                   id="address"
-                  endAdornment={address == '' && <InputAdornment position="end" style={{marginRight: 8}}>
+                  endAdornment={address === '' && <InputAdornment position="end" style={{marginRight: 8}}>
                     <Button variant="outlined" color="primary" onClick={()=>{setAddress(account ? account : '')}}>{t('new.use-connected-wallet')}
                     </Button></InputAdornment>}
                 />
@@ -490,9 +492,9 @@ export default function (props: any) {
                   MenuProps={{ elevation: 1 }}
                   input={<BootstrapInput fullWidth />}>
                   <MenuItem value={0}>0%</MenuItem>
-                  <MenuItem value={10}>10%</MenuItem>
-                  <MenuItem value={25}>25%</MenuItem>
-                  <MenuItem value={50}>50%</MenuItem>
+                  <MenuItem value={1000}>10%</MenuItem>
+                  <MenuItem value={2500}>25%</MenuItem>
+                  <MenuItem value={5000}>50%</MenuItem>
                 </Select>
               </Grid>
             </Grid>
@@ -554,7 +556,7 @@ export default function (props: any) {
                     <Image
                       ipfs={banner}
                       style={{width: 266, height: 175, borderRadius: 16}}
-                      uploading={uploadingBanner}
+                      loading={uploadingBanner}
                       removable
                       onRemove={() => { setBanner('') }} />}
                   </Dropzone>
@@ -589,7 +591,7 @@ export default function (props: any) {
                     <Image
                       ipfs={thumbnail}
                       style={{width: 128, height: 128, borderRadius: 128}}
-                      uploading={uploadingThumbnail}
+                      loading={uploadingThumbnail}
                       removable
                       onRemove={() => { setThumbnail('') }} />}
                   </Dropzone>
@@ -617,7 +619,6 @@ export default function (props: any) {
         </Button>
         </Box>
       </Box>
-      <Button onClick={()=>{setConfirmationOpen(true)}}>open</Button>
       <ConfirmationDialog
         name={name}
         address={address}

@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react'
-import { useWeb3React } from '@web3-react/core'
-import { StickerTypeABI, StickerTypeAddresses } from './stickerContracts'
-import { parseMetadataEDN, IMetadata } from '../Web3/stickerMetadata'
-import contentHash from 'content-hash'
 import { Contract } from '@ethersproject/contracts'
+import { useWeb3React } from '@web3-react/core'
+import contentHash from 'content-hash'
 import { utils } from 'ethers'
-
+import { useEffect, useState } from 'react'
+import { IMetadata, parseMetadataEDN } from '../Web3/stickerMetadata'
 import { injected } from './connectors'
-import { useStickerDispatch, useStickerState } from './context'
+import { useStickerState } from './context'
+import { StickerTypeABI, StickerTypeAddresses } from './stickerContracts'
+
 
 export function useEagerConnect() {
   const { activate, active } = useWeb3React()
@@ -81,10 +81,6 @@ export function useInactiveListener(suppress: boolean = false) {
 
 // fetch my sticker packs
 
-interface IStickerPacks {
-  [key: number]: IMetadata
-}
-
 export function useFetchMyStickerPackIds() {
   const { account, chainId, library } = useWeb3React()
   const { SuccessStickersCount } = useStickerState();
@@ -102,8 +98,6 @@ export function useFetchMyStickerPackIds() {
       //
 
       let stc = new Contract(StickerTypeAddresses[chainId as number], StickerTypeABI, library);
-      //let cinterface = new Interface(StickerTypeABI)
-      //let smc = new Contract(StickerMarketAddresses[chainId as number], StickerMarketABI, library);
       stc.balanceOf(account).then((numOfPacks: number) => {
         let promises: Promise<any>[] = [];
 
@@ -208,35 +202,4 @@ export function useFetchPaymentData(packId: number | undefined) {
   }, [library, chainId, packId])
 
   return { loading: loading, paymentData: paymentData, error: error }
-}
-
-export function useUpdatePendingStickers(lastBlock: number) {
-  const dispatch = useStickerDispatch()
-  const { PendingStickers } = useStickerState();
-  const { chainId, library } = useWeb3React()
-  const [loading, setLoading] = useState<boolean>(true)
-
-  useEffect((): any => {
-    if (!!library) {
-      setLoading(true);
-
-      let stc = new Contract(StickerTypeAddresses[chainId as number], StickerTypeABI, library);
-
-      PendingStickers.forEach(PendingSticker => {
-        library.getTransactionReceipt(PendingSticker.tx.hash)
-          .then((receipt: { status: number }) => {
-            if (receipt) {
-              if(receipt.status === 1) {
-                dispatch({type: 'REMOVE_PENDING_STICKER', tx: PendingSticker.tx})
-              } else {
-                dispatch({type: 'MOVE_PENDING_STICKER_TO_FAILED', tx: PendingSticker.tx})
-              }
-            }})
-      })
-    } else {
-      setLoading(false)
-    }
-  }, [library, chainId, lastBlock])
-
-  return { loading: loading }
 }

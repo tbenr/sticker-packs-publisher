@@ -1,14 +1,5 @@
 import { makeStyles, Theme } from '@material-ui/core/styles'
 
-/*
-import { BaseCSSProperties } from '@material-ui/core/styles/withStyles';
-
-type TProps = {
-  thumbnailUrl: string,
-  bannerUrl: string
-};
-*/
-
 const useStyles = makeStyles((theme: Theme) => ({
   mainCard: {
     height: '224px',

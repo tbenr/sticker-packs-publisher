@@ -1,18 +1,17 @@
+import { Box, Card, CircularProgress, Typography } from '@material-ui/core';
 import React, { useMemo, useState } from 'react';
-import { IconButton, Container, Typography, Box, Card, Paper, CircularProgress } from '@material-ui/core';
+import Skeleton from '@material-ui/lab/Skeleton';
 import { useTranslation } from 'react-i18next';
-import { IMetadata } from '../Web3/stickerMetadata'
-import {useFetchStickerPackSummary, useFetchPaymentData} from '../Web3/hooks'
-import Image from '../Image'
-
 import { useHistory } from "react-router-dom";
-
-import useStyles from './styles'
-import statusIcon from '../../images/iconStatusLogo.svg'
-import { ReactComponent as IconEdit } from '../../images/iconEdit.svg'
-
-import bannerExample from '../../images/bannerExample.png'
-import thumbnailExample from '../../images/thumbnailExample.png'
+import bannerExample from '../../images/bannerExample.png';
+import { ReactComponent as IconEdit } from '../../images/iconEdit.svg';
+import statusIcon from '../../images/iconStatusLogo.svg';
+import thumbnailExample from '../../images/thumbnailExample.png';
+import Image from '../Image';
+import { useFetchPaymentData, useFetchStickerPackSummary } from '../Web3/hooks';
+import { IMetadata } from '../Web3/stickerMetadata';
+import useStyles from './styles';
+import theme from '../../theme';
 
 const exampleName = "Tozemoon"
 const exampleAuthor = "David Lanham"
@@ -24,11 +23,12 @@ interface SPCProps extends Partial<IMetadata> {
     packId?: number,
     example?: boolean,
     preview?: any,
-    pending?: boolean
+    skeleton?: boolean, // render a skeleton card instead
+    txPending?: boolean
 }
 
-export default function (props: SPCProps) {
-    const { packId, example, preview, pending = false} = props;
+export default function StickerPackCard(props: SPCProps) {
+    const { packId, example, preview, txPending = false, skeleton = false} = props;
 
     const { t } = useTranslation();
     const classes = useStyles();
@@ -38,6 +38,8 @@ export default function (props: SPCProps) {
 
     const {loading: loadingPS, stickerPackSummary, error: errorPS} =  useFetchStickerPackSummary(packId);
     const {loading: loadingPD, paymentData} =  useFetchPaymentData(packId);
+
+    const loading = !txPending && (loadingPS || loadingPD || skeleton)
 
     const content = useMemo(() => {
 
@@ -65,40 +67,66 @@ export default function (props: SPCProps) {
         
         let content;
     
-        if(loadingPS || loadingPD) content = <>..loading..</>
-        else if(errorPS) content = <>invalid pack</>
+        if (errorPS) content = <Box display="flex" style={{
+            width: '241px',
+            height: '160px',
+            borderRadius: 16,
+            color: theme.palette.grey[700],
+            backgroundColor: theme.palette.grey[300]
+        }}>
+            <Box m="auto" marginX={6}>
+            <Typography align='center' variant="subtitle2" color="inherit">{t('error-loading-pack')}</Typography>
+            </Box>
+        </Box>
         else content =
             <div style={{ position: 'relative'}}
-            onMouseEnter={() => { console.log('asd'); setShowEditIcon(true) }}
+            onMouseEnter={() => { setShowEditIcon(!txPending) }}
             onMouseLeave={() => { setShowEditIcon(false) }}>
             <Box>
-                <Image style={{width: '100%', borderRadius: 16, marginBottom: '12px', opacity: showEditIcon ? '0.5' : undefined, filter: showEditIcon ? 'blur(2px)' : undefined}} {...banner}></Image>
+                {loading &&
+                    <Skeleton variant="rect" animation="wave" style={{width: '100%', height: '160px', borderRadius: 16, marginBottom: '12px'}}/>
+                }
+                {!loading &&
+                    <Image loadingStyle='skeleton' style={{width: '100%', height: '160px', borderRadius: 16, marginBottom: '12px', opacity: showEditIcon ? '0.5' : undefined, filter: showEditIcon ? 'blur(2px)' : undefined}} {...banner}></Image>
+                }
             </Box>
             <Box display="flex">
                 <Box>
-                    {pending &&
+                    {txPending &&
                         <div className={classes.pendingContainer}>
                             <CircularProgress style={{width: 18, height: 18}} color='inherit'/>
                         </div>
                     }
-                    {!pending &&
-                        <Image style={{width: 40, height: 40, borderRadius: 40, marginRight: '14px'}} {...thumbnail}></Image>
+                    {!txPending &&
+                        <Image loadingStyle='skeleton' style={{width: 40, height: 40, borderRadius: 40, marginRight: '14px'}} {...thumbnail}></Image>
                     }
                 </Box>
                 <Box flexGrow={1}>
-                    <Typography gutterBottom variant="h6">{name}</Typography>
-                    {pending && 
-                        <Typography variant="body2" color="textSecondary">{t('publising')}</Typography>
+                    {loading && <>
+                        <Skeleton variant="text" animation="wave" width="100%"><Typography gutterBottom variant="h6">lorem</Typography></Skeleton>
+                        <Skeleton variant="text" animation="wave" width="100%"><Typography gutterBottom variant="body2">lorem</Typography></Skeleton>
+                        </>
                     }
-                    {!pending &&
-                        <Typography variant="body2">{author}</Typography>
-                    } 
+                    {!loading && <>
+                        <Typography gutterBottom variant="h6">{name}</Typography>
+                        {txPending && 
+                            <Typography variant="body2" color="textSecondary">{t('publising')}</Typography>
+                        }
+                        {!txPending &&
+                            <Typography variant="body2">{author}</Typography>
+                        }
+                        </>}
                 </Box>
                 <Box>
-                    <Box display="flex" justifyContent="center" alignItems="center" className={classes.priceContainer}>
-                        <img className={classes.priceIcon} src={statusIcon}/>
-                        <Typography variant="subtitle1"color="inherit">{price}</Typography>
-                    </Box>
+                    {!txPending && !loading &&
+                        <Box display="flex" justifyContent="center" alignItems="center" className={classes.priceContainer}>
+                            <img className={classes.priceIcon} src={statusIcon}/>
+                            <Typography variant="subtitle1"color="inherit">{price}</Typography>
+                        </Box>
+                    }
+                    {loading &&
+                        <Skeleton variant="rect" animation="wave" style={{width: '50px', height: '27px', borderRadius: 14, marginLeft: 8}}/>
+                    }
                 </Box>
             </Box>
             {showEditIcon &&
@@ -114,7 +142,7 @@ export default function (props: SPCProps) {
 
             return content;
 
-    },[packId,example,preview, loadingPS, loadingPD, errorPS, showEditIcon, pending])
+    },[packId,example,preview, loading, errorPS, showEditIcon, txPending, paymentData, stickerPackSummary, history, t, classes])
 
     return (
         <Card className={classes.mainCard} elevation={0}>

@@ -1,15 +1,14 @@
-import { withStyles } from '@material-ui/core/styles';
-import { Card, Box, Paper, WithStyles } from '@material-ui/core';
-import React, { Component } from 'react';
-import {useFetchStickerPackSummary, useFetchPaymentData} from '../Web3/hooks'
-import {useParams} from "react-router-dom";
+import { Box, Card } from '@material-ui/core';
+import React from 'react';
+import { useParams } from "react-router-dom";
+import { useFetchStickerPackSummary } from '../Web3/hooks';
   
 
 interface ParamTypes {
     packId: string
   }
 
-  export default function () {
+  export default function EditStickerPack() {
     //const { t } = useTranslation();
     //const classes = useStyles();
 
