@@ -5,11 +5,13 @@ import { useWeb3React } from '@web3-react/core';
 import contentHash from 'content-hash';
 import { BigNumber, FixedNumber } from 'ethers';
 import { useSnackbar } from 'notistack';
-import React, { useState } from 'react';
+import React, { ReactNode, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router-dom';
 import { ReactComponent as IconHelp } from '../../images/iconHelp.svg';
 import { ReactComponent as IconSNT } from '../../images/iconSNT.svg';
+import CheckCircleRoundedIcon from '@material-ui/icons/CheckCircleRounded';
+import ErrorRoundedIcon from '@material-ui/icons/ErrorRounded';
 import { ipfsAdd } from '../../utils/ipfs';
 import Dropzone from '../Dropzone';
 import EmptyFrame from '../EmptyFrameCard';
@@ -18,6 +20,7 @@ import Image from '../Image';
 import ConfirmationDialog from '../NewStickerPackConfirmationDialog';
 import StickersDndGrid from '../StickersDndGrid';
 import { useStickerDispatch } from '../Web3/context';
+import { useAddressChecker } from '../Web3/hooks';
 import { StickerMarketABI, StickerMarketAddresses } from '../Web3/stickerContracts';
 import { AvailableCategories, createMetadataEDN, IMetadata } from '../Web3/stickerMetadata';
 import useStyles from './styles';
@@ -82,7 +85,7 @@ const BootstrapInput = withStyles((theme: Theme) =>
 
 export default function NewStickerPackForm() {
   const [name, setName] = useState("");
-  const [categories, setCategories] = React.useState<string[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [author, setAuthor] = useState("");
   const [address, setAddress] = useState("");
   const [installations, setInstallations] = useState<number>(-1);
@@ -97,19 +100,22 @@ export default function NewStickerPackForm() {
   const [complete, setComplete] = useState<boolean>(false);
 
   const [confirmationOpen, setConfirmationOpen] = useState<boolean>(false);
+  const { error: addressError, isENS: checkedAddressIsENS, resolved: checkedAddress } = useAddressChecker(address);
 
   const { enqueueSnackbar } = useSnackbar();
 
   const { account, chainId, library } = useWeb3React()
   const dispatch = useStickerDispatch();
 
-  React.useEffect(() => {
+  useEffect(() => {
     setComplete(name.length !== 0 &&
       author.length !== 0 &&
+      categories.length !== 0 &&
       thumbnail.length !== 0 &&
       banner.length !== 0 &&
+      checkedAddress !== undefined &&
       stickers.length >= minStickers)
-  }, [name, author, thumbnail, banner, stickers])
+  }, [name, author, thumbnail, banner, stickers, checkedAddress])
 
   const history = useHistory();
   const classes = useStyles();
@@ -151,7 +157,7 @@ export default function NewStickerPackForm() {
               author: author,
               name: name,
               categories: categories,
-              address: address,
+              address: checkedAddress || '',
               installations: installations,
               contribution: contribution,
               thumbnail: thumbnail,
@@ -339,6 +345,30 @@ export default function NewStickerPackForm() {
   const showThumbnailPreview = thumbnail.length > 0 || uploadingThumbnail
   const showStickersPreview = stickers.length > 0 || uploadingStickers > 0
 
+  const addressAdornment = useMemo<ReactNode>(() => {
+
+    if (address === '') return <InputAdornment position="end" style={{ marginRight: 8 }}>
+      <Button variant="outlined" color="primary" onClick={() => { setAddress(account ? account : '') }}>{t('new.use-connected-wallet')}</Button>
+    </InputAdornment>
+
+    if (addressError) return <InputAdornment position="end" style={{ marginRight: 8 }}>
+      <Tooltip title={addressError} placement="top-end" arrow><ErrorRoundedIcon color="error" /></Tooltip>
+    </InputAdornment>
+
+    if (checkedAddress) {
+      if (checkedAddressIsENS) return <InputAdornment position="end" style={{ marginRight: 8 }}>
+        <Tooltip title={checkedAddress} placement="top-end" arrow><CheckCircleRoundedIcon color="primary" /></Tooltip>
+      </InputAdornment>
+
+      else return <InputAdornment position="end" style={{ marginRight: 8 }}>
+        <CheckCircleRoundedIcon color="primary" />
+      </InputAdornment>
+    }
+
+    return undefined
+
+  }, [address, checkedAddressIsENS, checkedAddress, addressError])
+
   return (
     <Box display="flex" flexDirection='column' justifyContent='center' alignItems="center" width='100%'>
       <Box display="flex" flexDirection='column' justifyContent='center' alignItems="center" width='75vw' minWidth='764px' maxWidth='1024px'>
@@ -417,9 +447,7 @@ export default function NewStickerPackForm() {
                   onChange={e => setAddress(e.target.value)}
                   fullWidth
                   id="address"
-                  endAdornment={address === '' && <InputAdornment position="end" style={{marginRight: 8}}>
-                    <Button variant="outlined" color="primary" onClick={()=>{setAddress(account ? account : '')}}>{t('new.use-connected-wallet')}
-                    </Button></InputAdornment>}
+                  endAdornment={addressAdornment}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -621,7 +649,7 @@ export default function NewStickerPackForm() {
       </Box>
       <ConfirmationDialog
         name={name}
-        address={address}
+        address={checkedAddress||''}
         stickers={stickers}
         author={author}
         category={categories}

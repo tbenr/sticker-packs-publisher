@@ -7,6 +7,8 @@ import { IMetadata, parseMetadataEDN } from '../Web3/stickerMetadata'
 import { injected } from './connectors'
 import { useStickerState } from './context'
 import { StickerTypeABI, StickerTypeAddresses } from './stickerContracts'
+import { isAddress, parseENSAddress } from '../../utils/eth'
+import useDebounce from '../../utils/hooks'
 
 
 export function useEagerConnect() {
@@ -202,4 +204,46 @@ export function useFetchPaymentData(packId: number | undefined) {
   }, [library, chainId, packId])
 
   return { loading: loading, paymentData: paymentData, error: error }
+}
+
+
+export function useAddressChecker(addressOrENS: string) {
+  const { chainId, library } = useWeb3React()
+  const [error, setError] = useState<string>()
+  const [resolved, setResolved] = useState<string>()
+  const [isENS, setIsENS] = useState<boolean>()
+  const debouncedAddressOrENS = useDebounce(addressOrENS, 200)
+
+  useEffect((): any => {
+    if(!debouncedAddressOrENS) {
+      setResolved(undefined)
+      setError(undefined)
+      setIsENS(undefined)
+    } else if(isAddress(debouncedAddressOrENS)) {
+      setResolved(debouncedAddressOrENS)
+      setError(undefined)
+      setIsENS(false)
+    } else if(parseENSAddress(debouncedAddressOrENS)) {
+      setIsENS(true)
+      library.resolveName(debouncedAddressOrENS).then((address:string) => {
+        if(address) {
+          setResolved(address)
+          setError(undefined)
+        } else {
+          setResolved(undefined)
+          setError('unresolved ENS')
+        }
+      }).catch((e:any) => {
+        setResolved(undefined)
+        setError(e.toString())
+        setIsENS(undefined)
+      });
+    } else {
+      setResolved(undefined)
+      setError('invalid address')
+      setIsENS(undefined)
+    }
+  },[debouncedAddressOrENS, chainId, library])
+
+  return { resolved: resolved, error: error, isENS: isENS}
 }
