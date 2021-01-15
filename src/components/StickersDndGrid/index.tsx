@@ -95,8 +95,8 @@ export default function StickersPreview(props:
               </div>
             ))}
         </GridDropZone>
-        {(grid_vert_lines_x.map((value) => (<Box className={classes.gridDividerVertical} left={value} border />)))}
-        {(grid_vert_lines_y.map((value) => (<Box className={classes.gridDividerHorizontal} top={value} border />)))}
+        {(grid_vert_lines_x.map((value) => (<Box className={classes.gridDividerVertical} left={value} />)))}
+        {(grid_vert_lines_y.map((value) => (<Box className={classes.gridDividerHorizontal} top={value} />)))}
       </GridContextProvider>
     );
   }

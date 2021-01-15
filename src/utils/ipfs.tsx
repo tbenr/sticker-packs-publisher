@@ -11,5 +11,10 @@ async function ipfsAdd(content: string | Blob) {
     return Promise.reject(`[${response.status}] ${response.statusText}`);
 }
 
-export { ipfsAdd }
+async function ipfsFetch(hash: string) {
+    return fetch(`https://ipfs.io/ipfs/${hash}`)
+    .then((resp: any) => resp.text())
+}
+
+export { ipfsAdd, ipfsFetch }
   

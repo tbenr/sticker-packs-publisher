@@ -120,7 +120,7 @@ export default function StickerPackCard(props: SPCProps) {
                 <Box>
                     {!txPending && !loading &&
                         <Box display="flex" justifyContent="center" alignItems="center" className={classes.priceContainer}>
-                            <img className={classes.priceIcon} src={statusIcon}/>
+                            <img className={classes.priceIcon} src={statusIcon} alt='price'/>
                             <Typography variant="subtitle1"color="inherit">{price}</Typography>
                         </Box>
                     }

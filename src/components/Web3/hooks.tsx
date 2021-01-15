@@ -6,9 +6,10 @@ import { useEffect, useState } from 'react'
 import { IMetadata, parseMetadataEDN } from '../Web3/stickerMetadata'
 import { injected } from './connectors'
 import { useStickerState } from './context'
-import { StickerTypeABI, StickerTypeAddresses } from './stickerContracts'
+import { StickerMarketAddresses, StickerPackAddresses, StickerTypeABI, StickerTypeAddresses } from './stickerContracts'
 import { isAddress, parseENSAddress } from '../../utils/eth'
 import useDebounce from '../../utils/hooks'
+import { ipfsFetch } from '../../utils/ipfs'
 
 
 export function useEagerConnect() {
@@ -89,17 +90,18 @@ export function useFetchMyStickerPackIds() {
   const [error, setError] = useState<string | undefined>()
   const [loading, setLoading] = useState<boolean>(true)
   const [myStickerPackIds, setMyStickerPackIds] = useState<number[]>([])
+  const { address } = useStickerTypeContractAddress()
 
   useEffect((): any => {
 
-    if (!!account && !!library) {
+    if (!!account && !!library && !!address) {
       setLoading(true);
 
       // TEST
       //let account = "0x5194EF53dc9c3ebfe6A8A7f6793d53ce50066738" // "0x5194EF53dc9c3ebfe6A8A7f6793d53ce50066738" //"0xA71C4Ef0c5BC4b1a172A19DcB5882683808E6b82";
       //
 
-      let stc = new Contract(StickerTypeAddresses[chainId as number], StickerTypeABI, library);
+      let stc = new Contract(address, StickerTypeABI, library);
       stc.balanceOf(account).then((numOfPacks: number) => {
         let promises: Promise<any>[] = [];
 
@@ -121,7 +123,7 @@ export function useFetchMyStickerPackIds() {
         setError(e)
       });
     }
-  }, [account, library, chainId, SuccessStickersCount])
+  }, [account, address, library, chainId, SuccessStickersCount])
 
   return { loading: loading, myStickerPackIds: myStickerPackIds, error: error }
 }
@@ -132,12 +134,13 @@ export function useFetchStickerPackSummary(packId: number | undefined) {
   const [error, setError] = useState<string | undefined>()
   const [loading, setLoading] = useState<boolean>(true)
   const [stickerPackSummary, setStickerPackSummary] = useState<IMetadata>()
+  const { address } = useStickerTypeContractAddress()
 
   useEffect((): any => {
-    if (!!library && !!packId) {
+    if (!!library && !!packId && !!address) {
       setLoading(true);
 
-      let stc = new Contract(StickerTypeAddresses[chainId as number], StickerTypeABI, library);
+      let stc = new Contract(address, StickerTypeABI, library);
 
       stc.getPackSummary(packId).then((packSummary: any) => {
 
@@ -145,8 +148,7 @@ export function useFetchStickerPackSummary(packId: number | undefined) {
         let contenthash = packSummary[2];
         let ipfshash = contentHash.decode(contenthash)
 
-        return fetch(`https://ipfs.io/ipfs/${ipfshash}`)
-          .then((resp: any) => resp.text())
+        return ipfsFetch(ipfshash)
           .then(metadataEDN => {
             let packSummary = parseMetadataEDN(metadataEDN);
 
@@ -168,7 +170,7 @@ export function useFetchStickerPackSummary(packId: number | undefined) {
     } else {
       setLoading(false)
     }
-  }, [library, chainId, packId])
+  }, [library, chainId, packId, address])
 
   return { loading: loading, stickerPackSummary: stickerPackSummary, error: error }
 }
@@ -178,12 +180,13 @@ export function useFetchPaymentData(packId: number | undefined) {
   const [error, setError] = useState<string | undefined>()
   const [loading, setLoading] = useState<boolean>(true)
   const [paymentData, setPaymentData] = useState<string>()
+  const { address } = useStickerTypeContractAddress()
 
   useEffect((): any => {
-    if (!!library && !!packId) {
+    if (!!library && !!packId && !!address) {
       setLoading(true);
 
-      let stc = new Contract(StickerTypeAddresses[chainId as number], StickerTypeABI, library);
+      let stc = new Contract(address, StickerTypeABI, library);
 
       stc.getPaymentData(packId).then((paymentData: any) => {
 
@@ -201,49 +204,80 @@ export function useFetchPaymentData(packId: number | undefined) {
     } else {
       setLoading(false)
     }
-  }, [library, chainId, packId])
+  }, [library, chainId, packId, address])
 
   return { loading: loading, paymentData: paymentData, error: error }
 }
 
 
-export function useAddressChecker(addressOrENS: string) {
+export function useAddressChecker(addressOrENS: string, debounce:boolean = true) {
   const { chainId, library } = useWeb3React()
   const [error, setError] = useState<string>()
-  const [resolved, setResolved] = useState<string>()
+  const [address, setAddress] = useState<string>()
   const [isENS, setIsENS] = useState<boolean>()
-  const debouncedAddressOrENS = useDebounce(addressOrENS, 200)
+  const debouncedAddressOrENS = useDebounce(addressOrENS, debounce ? 200 : 0)
 
   useEffect((): any => {
     if(!debouncedAddressOrENS) {
-      setResolved(undefined)
+      setAddress(undefined)
       setError(undefined)
       setIsENS(undefined)
     } else if(isAddress(debouncedAddressOrENS)) {
-      setResolved(debouncedAddressOrENS)
+      setAddress(debouncedAddressOrENS)
       setError(undefined)
       setIsENS(false)
     } else if(parseENSAddress(debouncedAddressOrENS)) {
       setIsENS(true)
-      library.resolveName(debouncedAddressOrENS).then((address:string) => {
-        if(address) {
-          setResolved(address)
+      library.resolveName(debouncedAddressOrENS).then((resolved:string) => {
+        if(resolved) {
+          setAddress(resolved)
           setError(undefined)
         } else {
-          setResolved(undefined)
+          setAddress(undefined)
           setError('unresolved ENS')
         }
       }).catch((e:any) => {
-        setResolved(undefined)
+        setAddress(undefined)
         setError(e.toString())
         setIsENS(undefined)
       });
     } else {
-      setResolved(undefined)
+      setAddress(undefined)
       setError('invalid address')
       setIsENS(undefined)
     }
   },[debouncedAddressOrENS, chainId, library])
 
-  return { resolved: resolved, error: error, isENS: isENS}
+  return { address: address, error: error, isENS: isENS}
+}
+
+function useStickerContractAddress(contract: 'market' | 'type' | 'pack') {
+  const { chainId } = useWeb3React()
+  let c;
+  if (chainId) {
+    switch (contract) {
+      case 'market':
+        c = StickerMarketAddresses[chainId]
+        break;
+      case 'pack':
+        c = StickerPackAddresses[chainId]
+        break;
+      case 'type':
+        c = StickerTypeAddresses[chainId]
+        break;
+    }
+  } else c = '';
+  return useAddressChecker(c, false)
+}
+
+export function useStickerMarketContractAddress() {
+  return useStickerContractAddress('market')
+}
+
+export function useStickerPackContractAddress() {
+  return useStickerContractAddress('pack')
+}
+
+export function useStickerTypeContractAddress() {
+  return useStickerContractAddress('type')
 }

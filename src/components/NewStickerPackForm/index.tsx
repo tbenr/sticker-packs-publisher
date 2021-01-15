@@ -1,17 +1,17 @@
 import { Contract } from '@ethersproject/contracts';
 import { TransactionResponse } from '@ethersproject/providers';
 import { Box, Button, Chip, createStyles, Divider, Grid, InputAdornment, InputBase, InputLabel, Link, MenuItem, Select, Theme, Tooltip, Typography, withStyles } from '@material-ui/core';
+import CheckCircleRoundedIcon from '@material-ui/icons/CheckCircleRounded';
+import ErrorRoundedIcon from '@material-ui/icons/ErrorRounded';
 import { useWeb3React } from '@web3-react/core';
 import contentHash from 'content-hash';
 import { BigNumber, FixedNumber } from 'ethers';
 import { useSnackbar } from 'notistack';
-import React, { ReactNode, useEffect, useMemo, useState } from 'react';
+import React, { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router-dom';
 import { ReactComponent as IconHelp } from '../../images/iconHelp.svg';
 import { ReactComponent as IconSNT } from '../../images/iconSNT.svg';
-import CheckCircleRoundedIcon from '@material-ui/icons/CheckCircleRounded';
-import ErrorRoundedIcon from '@material-ui/icons/ErrorRounded';
 import { ipfsAdd } from '../../utils/ipfs';
 import Dropzone from '../Dropzone';
 import EmptyFrame from '../EmptyFrameCard';
@@ -20,8 +20,8 @@ import Image from '../Image';
 import ConfirmationDialog from '../NewStickerPackConfirmationDialog';
 import StickersDndGrid from '../StickersDndGrid';
 import { useStickerDispatch } from '../Web3/context';
-import { useAddressChecker } from '../Web3/hooks';
-import { StickerMarketABI, StickerMarketAddresses } from '../Web3/stickerContracts';
+import { useAddressChecker, useStickerMarketContractAddress } from '../Web3/hooks';
+import { StickerMarketABI } from '../Web3/stickerContracts';
 import { AvailableCategories, createMetadataEDN, IMetadata } from '../Web3/stickerMetadata';
 import useStyles from './styles';
 
@@ -98,13 +98,14 @@ export default function NewStickerPackForm() {
   const [uploadingStickers, setUploadingStickers] = useState<number>(0);
   const [stickers, setStickers] = useState<string[]>([]);
   const [complete, setComplete] = useState<boolean>(false);
+  const {address : stickerMarketContractAddress} = useStickerMarketContractAddress();
 
   const [confirmationOpen, setConfirmationOpen] = useState<boolean>(false);
-  const { error: addressError, isENS: checkedAddressIsENS, resolved: checkedAddress } = useAddressChecker(address);
+  const { error: addressError, isENS: checkedAddressIsENS, address: checkedAddress } = useAddressChecker(address);
 
   const { enqueueSnackbar } = useSnackbar();
 
-  const { account, chainId, library } = useWeb3React()
+  const { account, library } = useWeb3React()
   const dispatch = useStickerDispatch();
 
   useEffect(() => {
@@ -115,7 +116,7 @@ export default function NewStickerPackForm() {
       banner.length !== 0 &&
       checkedAddress !== undefined &&
       stickers.length >= minStickers)
-  }, [name, author, thumbnail, banner, stickers, checkedAddress])
+  }, [name, author, thumbnail, banner, stickers, checkedAddress, categories.length])
 
   const history = useHistory();
   const classes = useStyles();
@@ -125,7 +126,7 @@ export default function NewStickerPackForm() {
     setCategories(event.target.value as string[]);
   };
 
-  const uploadMetadataAndSign = async () => {
+  const uploadMetadataAndSign = useCallback(async ()=> {
     const m: IMetadata = {
       name: name,
       author: author,
@@ -136,7 +137,10 @@ export default function NewStickerPackForm() {
 
     const metadata = createMetadataEDN(m);
 
-
+    if(!stickerMarketContractAddress) {
+      enqueueSnackbar(t('publish.error-tx-sign', { error: 'invalid contract' }), { variant: "error" });
+      return;
+    }
     return ipfsAdd(metadata)
       .catch(e => {
         enqueueSnackbar(t('publish.error-ipfs-uploading', { error: e }), { variant: "error" });
@@ -144,7 +148,7 @@ export default function NewStickerPackForm() {
 
         const finalContentHash = "0x" + contentHash.fromIpfs(hash);
 
-        let smc = new Contract(StickerMarketAddresses[chainId as number], StickerMarketABI, library.getSigner(account).connectUnchecked());
+        let smc = new Contract(stickerMarketContractAddress, StickerMarketABI, library.getSigner(account).connectUnchecked());
         let tmp = BigNumber.from(10).pow(18).mul(price);
         let priceP18 = FixedNumber.fromValue(tmp, 18);
 
@@ -183,14 +187,13 @@ export default function NewStickerPackForm() {
             })
           });
         })
-
-
       }).catch(e => {
         enqueueSnackbar(t('publish.error-tx-sign', { error: e }), { variant: "error" });
       })
-  };
 
-  const validateImg = function(imageFile: any, constraint: any) {
+  }, [stickerMarketContractAddress,name,author,banner,thumbnail,stickers, account, categories, checkedAddress, contribution, dispatch, enqueueSnackbar, history, installations, library, price, t])
+
+  const validateImg = useCallback((imageFile: any, constraint: any) => {
     return new Promise<void>((resolve,reject) => {
 
       if (imageFile) {
@@ -220,7 +223,7 @@ export default function NewStickerPackForm() {
       }
       else reject(t('new.error-type-load'));
     });
-  }
+  },[t])
 
   const handleThumbnail = async (files: any[]) => {
     if(files.length === 0) {
@@ -367,7 +370,7 @@ export default function NewStickerPackForm() {
 
     return undefined
 
-  }, [address, checkedAddressIsENS, checkedAddress, addressError])
+  }, [address, checkedAddressIsENS, checkedAddress, addressError, t, account])
 
   return (
     <Box display="flex" flexDirection='column' justifyContent='center' alignItems="center" width='100%'>

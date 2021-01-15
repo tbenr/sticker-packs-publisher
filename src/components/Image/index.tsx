@@ -56,6 +56,7 @@ export default function Image(props: IProps) {
                     display: imageStatus !== 'loaded' ? 'none' : 'block',
                     ...style
                 }}
+                    alt='img'
                     draggable='false'
                     src={ipfs ? `https://ipfs.io/ipfs/${ipfs}` : src}
                     onLoadStart={() => { setImageStatus("loading") }}
@@ -83,6 +84,7 @@ export default function Image(props: IProps) {
                         right: '-10px',
                         display: showRemoveIcon ? '' : 'none'
                     }}
+                    alt='remove'
                     draggable='false'
                     onClick={(e) => { e.stopPropagation(); if (onRemove) onRemove() }}
                     onMouseDown={(e) => { e.stopPropagation() }}

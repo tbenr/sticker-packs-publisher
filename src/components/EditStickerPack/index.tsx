@@ -21,6 +21,6 @@ interface ParamTypes {
     if(loading) return (<>...loading..</>)
 
   return (<Box display="flex" flexWrap="wrap">
-        {stickerPackSummary?.stickers.map(({hash}) => <Card style={{width: '88px', height: '88px', margin: '6px', padding: '6px'}} key={hash}><img style={{width: '100%',objectFit: 'contain'}} src={`https://ipfs.io/ipfs/${hash}`}/></Card>)}
+        {stickerPackSummary?.stickers.map(({hash}) => <Card style={{width: '88px', height: '88px', margin: '6px', padding: '6px'}} key={hash}><img style={{width: '100%',objectFit: 'contain'}} alt='sticker' src={`https://ipfs.io/ipfs/${hash}`}/></Card>)}
         </Box>)
   }
