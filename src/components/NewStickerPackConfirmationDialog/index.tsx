@@ -6,6 +6,7 @@ import StickerPackCard from '../StickerPackCard'
 import Image from '../Image';
 import { useTranslation } from 'react-i18next';
 import { ReactComponent as IconClose } from '../../images/iconClose.svg';
+import { AvailableCategories } from '../Web3/stickerMetadata';
 
 import theme from '../../theme';
 
@@ -70,7 +71,7 @@ interface SimpleDialogProps {
     stickers: string[];
     address: string;
     author: string;
-    category: string[];
+    categories: string[];
     installations: number;
     contribution: number;
     thumbnail: string;
@@ -83,7 +84,7 @@ interface SimpleDialogProps {
 export default function CustomizedDialogs(props: SimpleDialogProps) {
     const { t } = useTranslation();
 
-    const { onCancel, onConfirm, open, author, name, category, price, address, contribution,installations,thumbnail,banner, stickers } = props;
+    const { onCancel, onConfirm, open, author, name, categories, price, address, contribution,installations,thumbnail,banner, stickers } = props;
 
     const handleCancel = () => {
       onCancel();
@@ -109,7 +110,7 @@ export default function CustomizedDialogs(props: SimpleDialogProps) {
                             </Grid>
                             <Grid item xs={4}>
                                 <Typography variant="subtitle2" color="textSecondary">Category</Typography>
-                                <Typography variant="subtitle2" color="textPrimary">{category.toString()}</Typography>
+                                <Typography variant="subtitle2" color="textPrimary">{categories.map(v=>AvailableCategories[v]).join(', ')}</Typography>
                             </Grid>
                             <Grid item xs={4}>
                                 <Typography variant="subtitle2" color="textSecondary">Price Pack</Typography>
@@ -117,11 +118,11 @@ export default function CustomizedDialogs(props: SimpleDialogProps) {
                             </Grid>
                             <Grid item xs={4}>
                                 <Typography variant="subtitle2" color="textSecondary">Contribution to Status</Typography>
-                                <Typography variant="subtitle2" color="textPrimary">{contribution}</Typography>
+                                <Typography variant="subtitle2" color="textPrimary">{`${contribution/100}%`}</Typography>
                             </Grid>
                             <Grid item xs={4}>
                                 <Typography variant="subtitle2" color="textSecondary">Limited Edition</Typography>
-                                <Typography variant="subtitle2" color="textPrimary">{installations}</Typography>
+                                <Typography variant="subtitle2" color="textPrimary">{installations === -1 ? 'Unlimited' : installations}</Typography>
                             </Grid>
                             <Grid item xs={12}>
                                 <Typography variant="subtitle2" color="textSecondary">Ethereum address or ENS domain to receive SNT</Typography>
@@ -138,7 +139,7 @@ export default function CustomizedDialogs(props: SimpleDialogProps) {
                     </Box>
                     <Box display="flex" flexDirection="column" alignContent="center" alignItems="center" justifyContent="center" paddingLeft={2}>
                         <Typography variant='subtitle2' color="textSecondary" paragraph>This is how it will look like in Status</Typography>
-                        <StickerPackCard preview={{price:price,author:author,name:name,thumbnail:thumbnail,banner:banner}}/>
+                        <StickerPackCard preview={{price:price,author:author,name:name,thumbnail:thumbnail,banner:banner}} edit={false}/>
                     </Box>
                 </Box>
             </Box>

@@ -24,11 +24,12 @@ interface SPCProps extends Partial<IMetadata> {
     example?: boolean,
     preview?: any,
     skeleton?: boolean, // render a skeleton card instead
-    txPending?: boolean
+    txPending?: boolean,
+    edit?: boolean // show edit button?
 }
 
 export default function StickerPackCard(props: SPCProps) {
-    const { packId, example, preview, txPending = false, skeleton = false} = props;
+    const { packId, example, preview, txPending = false, skeleton = false, edit = true} = props;
 
     const { t } = useTranslation();
     const classes = useStyles();
@@ -80,7 +81,7 @@ export default function StickerPackCard(props: SPCProps) {
         </Box>
         else content =
             <div style={{ position: 'relative'}}
-            onMouseEnter={() => { setShowEditIcon(!txPending) }}
+            onMouseEnter={() => { setShowEditIcon(!txPending && edit) }} // show edit only if the card is not associated to a pending tx and edit is active
             onMouseLeave={() => { setShowEditIcon(false) }}>
             <Box>
                 {loading &&
@@ -142,7 +143,7 @@ export default function StickerPackCard(props: SPCProps) {
 
             return content;
 
-    },[packId,example,preview, loading, errorPS, showEditIcon, txPending, paymentData, stickerPackSummary, history, t, classes])
+    },[packId,example,preview, loading, errorPS, showEditIcon, txPending, paymentData, stickerPackSummary, history, t, classes, edit])
 
     return (
         <Card className={classes.mainCard} elevation={0}>

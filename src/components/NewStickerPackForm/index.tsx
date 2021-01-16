@@ -655,7 +655,7 @@ export default function NewStickerPackForm() {
         address={checkedAddress||''}
         stickers={stickers}
         author={author}
-        category={categories}
+        categories={categories}
         installations={installations}
         contribution={contribution}
         thumbnail={thumbnail}
