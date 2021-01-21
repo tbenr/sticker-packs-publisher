@@ -73,7 +73,18 @@
     },
     "review": {
         "title": "Review sticker pack",
-        "publish": "Publish sticker pack"
+        "publish": "Publish sticker pack",
+        "artist-name": "Author",
+        "sticker-pack-name": "Sticker Pack name",
+        "category": "Category",
+        "price": "Price Pack",
+        "contribution": "Contribution to Status",
+        "limited-edition": "Limited Edition",
+        "unlimited": "Unlimited",
+        "address-receiving": "Ethereum address to receive SNT",
+        "stickers": "Stickers",
+        "text1": "This is how it will look like in Status",
+        "text2": "Please review the sitcker pack carefully before publishing because most of the data cannot be edited later."
     },
     "publish": {
         "error-ipfs-uploading": "Error uploading metadata to ipfs ({{error}})",
