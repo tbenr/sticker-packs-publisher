@@ -90,7 +90,7 @@ export default function StickersPreview(props:
                                               pointerEvents:'none'}}>
                 <Box height="100%" width="100%" display="flex" flexDirection='column' justifyContent="center" alignItems="center" >
                   <IconUpload fill={theme.palette.grey[400]}/>
-                  <Typography variant="subtitle2" color="textSecondary">{t('new.upload')}</Typography>
+                  <Typography variant="subtitle2" color="textSecondary">{t('form.upload')}</Typography>
                 </Box>
               </div>
             ))}

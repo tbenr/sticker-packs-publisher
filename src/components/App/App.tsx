@@ -17,9 +17,8 @@ import {
 } from "react-router-dom";
 import logo from '../../images/sickers_logo.svg';
 import Dashboard from '../Dashboard';
-import EditStickerPack from '../EditStickerPack';
 import NavBar from '../NavBar';
-import NewStickerPackForm from '../NewStickerPackForm';
+import StickerPackForm from '../StickerPackForm';
 import {
   authereum,
   fortmatic, frame, injected,
@@ -177,10 +176,10 @@ function Main() {
             <Dashboard/>
           </Route>
           <Route path="/new/">
-            <NewStickerPackForm/>
+            <StickerPackForm/>
           </Route>
           <Route path="/edit/:packId">
-            <EditStickerPack/>
+            <StickerPackForm/>
           </Route>
         </Switch>
         </div>

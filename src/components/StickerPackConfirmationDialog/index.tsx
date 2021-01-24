@@ -81,7 +81,7 @@ interface IConfirmDialogProps {
 
 
 
-export default function NewStickerConfirmationDialog(props: IConfirmDialogProps) {
+export default function StickerConfirmationDialog(props: IConfirmDialogProps) {
     const { t } = useTranslation();
 
     const { onCancel, onConfirm, open, author, name, categories, price, address, contribution,installations,thumbnail,banner, stickers } = props;

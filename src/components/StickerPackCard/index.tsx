@@ -8,7 +8,7 @@ import { ReactComponent as IconEdit } from '../../images/iconEdit.svg';
 import statusIcon from '../../images/iconStatusLogo.svg';
 import thumbnailExample from '../../images/thumbnailExample.png';
 import Image from '../Image';
-import { useFetchPaymentData, useFetchStickerPackSummary } from '../Web3/hooks';
+import { useFetchPaymentData, useFetchStickerPack } from '../Web3/hooks';
 import { IMetadata } from '../Web3/stickerMetadata';
 import useStyles from './styles';
 import theme from '../../theme';
@@ -37,7 +37,7 @@ export default function StickerPackCard(props: SPCProps) {
 
     const [showEditIcon, setShowEditIcon] = useState(false);
 
-    const {loading: loadingPS, stickerPackSummary, error: errorPS} =  useFetchStickerPackSummary(packId);
+    const {loading: loadingPS, stickerPackSummary, error: errorPS} =  useFetchStickerPack(packId);
     const {loading: loadingPD, paymentData} =  useFetchPaymentData(packId);
 
     const loading = !txPending && (loadingPS || loadingPD || skeleton)

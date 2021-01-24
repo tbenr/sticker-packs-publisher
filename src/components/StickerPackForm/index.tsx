@@ -17,14 +17,21 @@ import Dropzone from '../Dropzone';
 import EmptyFrame from '../EmptyFrameCard';
 import FormSection from '../FormSection';
 import Image from '../Image';
-import ConfirmationDialog from '../NewStickerPackConfirmationDialog';
+import RemoveConfirmationDialog from '../RemoveConfirmationDialog';
+import ConfirmationDialog from '../StickerPackConfirmationDialog';
+import DangerButton from '../DangerButton';
 import ExampleDialog from '../StickerPackExampleDialog';
 import StickersDndGrid from '../StickersDndGrid';
 import { useStickerDispatch } from '../Web3/context';
-import { useAddressChecker, useStickerMarketContractAddress } from '../Web3/hooks';
+import { useAddressChecker, useFetchStickerPack, useStickerMarketContractAddress } from '../Web3/hooks';
 import { StickerMarketABI } from '../Web3/stickerContracts';
 import { AvailableCategories, createMetadataEDN, IMetadata } from '../Web3/stickerMetadata';
+import { useParams } from "react-router-dom";
 import useStyles from './styles';
+
+interface ParamType {
+  packId: string
+}
 
 /** validations and utility functions **/
 
@@ -83,8 +90,9 @@ const BootstrapInput = withStyles((theme: Theme) =>
   }),
 )(InputBase);
 
-
-export default function NewStickerPackForm() {
+export default function StickerPackForm() {
+  const { packId: packIdStr } = useParams<ParamType>();
+  const { stickerPackSummary: fetchedPackSummary, categories: fetchedCategories } = useFetchStickerPack(packIdStr ? parseInt(packIdStr) : undefined);
   const [name, setName] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
   const [author, setAuthor] = useState("");
@@ -99,8 +107,9 @@ export default function NewStickerPackForm() {
   const [uploadingStickers, setUploadingStickers] = useState<number>(0);
   const [stickers, setStickers] = useState<string[]>([]);
   const [complete, setComplete] = useState<boolean>(false);
-  const {address : stickerMarketContractAddress} = useStickerMarketContractAddress();
+  const { address: stickerMarketContractAddress } = useStickerMarketContractAddress();
 
+  const [removeConfirmationOpen, setRemoveConfirmationOpen] = useState<boolean>(false);
   const [confirmationOpen, setConfirmationOpen] = useState<boolean>(false);
   const [exampleOpen, setExampleOpen] = useState<boolean>(false);
   const { error: addressError, isENS: checkedAddressIsENS, address: checkedAddress } = useAddressChecker(address);
@@ -109,6 +118,23 @@ export default function NewStickerPackForm() {
 
   const { account, library } = useWeb3React()
   const dispatch = useStickerDispatch();
+
+  const editMode = !!packIdStr;
+
+  // this effect applies to EDIT MODE
+  // TODO: fetch missing data
+  useEffect(() => {
+    if (!!fetchedPackSummary) {
+      setAuthor(fetchedPackSummary.author)
+      setName(fetchedPackSummary.name)
+      setBanner(fetchedPackSummary.preview)
+      setThumbnail(fetchedPackSummary.thumbnail)
+      setStickers(fetchedPackSummary.stickers.map(s => s.hash))
+    }
+    if (!!fetchedCategories) {
+      setCategories(fetchedCategories)
+    }
+  }, [fetchedPackSummary, fetchedCategories])
 
   useEffect(() => {
     setComplete(name.length !== 0 &&
@@ -128,7 +154,7 @@ export default function NewStickerPackForm() {
     setCategories(event.target.value as string[]);
   };
 
-  const uploadMetadataAndSign = useCallback(async ()=> {
+  const uploadMetadataAndSign = useCallback(async () => {
     const m: IMetadata = {
       name: name,
       author: author,
@@ -139,7 +165,7 @@ export default function NewStickerPackForm() {
 
     const metadata = createMetadataEDN(m);
 
-    if(!stickerMarketContractAddress) {
+    if (!stickerMarketContractAddress) {
       enqueueSnackbar(t('publish.error-tx-sign', { error: 'invalid contract' }), { variant: "error" });
       return;
     }
@@ -176,7 +202,7 @@ export default function NewStickerPackForm() {
           })
           history.push('/dashboard/');
           return library.waitForTransaction(response.hash).then((receipt: { status: number; }) => {
-            if(receipt.status === 1) {
+            if (receipt.status === 1) {
               dispatch({
                 type: 'REMOVE_PENDING_STICKER',
                 tx: response
@@ -193,15 +219,15 @@ export default function NewStickerPackForm() {
         enqueueSnackbar(t('publish.error-tx-sign', { error: e }), { variant: "error" });
       })
 
-  }, [stickerMarketContractAddress,name,author,banner,thumbnail,stickers, account, categories, checkedAddress, contribution, dispatch, enqueueSnackbar, history, installations, library, price, t])
+  }, [stickerMarketContractAddress, name, author, banner, thumbnail, stickers, account, categories, checkedAddress, contribution, dispatch, enqueueSnackbar, history, installations, library, price, t])
 
   const validateImg = useCallback((imageFile: any, constraint: any) => {
-    return new Promise<void>((resolve,reject) => {
+    return new Promise<void>((resolve, reject) => {
 
       if (imageFile) {
         const localImageUrl = URL.createObjectURL(imageFile);
         const imageObject = new window.Image();
-        imageObject.onerror = () => {reject(t('new.error-type-load'))}
+        imageObject.onerror = () => { reject(t('form.error-type-load')) }
         imageObject.onload = () => {
           imageFile.width = imageObject.naturalWidth;
           imageFile.height = imageObject.naturalHeight;
@@ -210,55 +236,57 @@ export default function NewStickerPackForm() {
           // validation
 
           // Get image size in kilobytes
-          if(imageFile.size > constraint.maxSize ) return reject(t('new.error-type-size'));
+          if (imageFile.size > constraint.maxSize) return reject(t('form.error-type-size'));
 
           // mime
-          if (!constraint.mimeFormats.includes(imageFile.type)) return reject(t('new.error-type-mime'));
+          if (!constraint.mimeFormats.includes(imageFile.type)) return reject(t('form.error-type-mime'));
 
           // dimensions
-          if (imageFile.height !== constraint.height) return reject(t('new.error-type-dimension'));
-          if (imageFile.width !== constraint.width) return reject(t('new.error-type-dimension'));
+          if (imageFile.height !== constraint.height) return reject(t('form.error-type-dimension'));
+          if (imageFile.width !== constraint.width) return reject(t('form.error-type-dimension'));
 
-          resolve(); 
+          resolve();
         };
         imageObject.src = localImageUrl;
       }
-      else reject(t('new.error-type-load'));
+      else reject(t('form.error-type-load'));
     });
-  },[t])
+  }, [t])
 
   const handleThumbnail = async (files: any[]) => {
-    if(files.length === 0) {
-      enqueueSnackbar(t('new.error-drop-one-file'),{variant: "info"})
+    if (files.length === 0) {
+      enqueueSnackbar(t('form.error-drop-one-file'), { variant: "info" })
       return null;
     }
 
     let imageFile = files[0];
     setThumbnail("");
 
-    return validateImg(imageFile,thumbnailLimits).then(async ()=> {
+    return validateImg(imageFile, thumbnailLimits).then(async () => {
       setUploadingThumbnail(true);
       try {
         const hash = await ipfsAdd(imageFile);
         setThumbnail(hash);
       } catch (e) {
         setThumbnail("");
-        enqueueSnackbar(t('new.error-ipfs-uploading', { filename: imageFile.name, error: e }), { variant: "error" });
+        enqueueSnackbar(t('form.error-ipfs-uploading', { filename: imageFile.name, error: e }), { variant: "error" });
       } finally {
         setUploadingThumbnail(false);
       }
     }).catch((err) => {
       setThumbnail("");
       setUploadingThumbnail(false);
-      enqueueSnackbar(t('new.error-base',{type: t('new.error-type-thumbnail'),
-                                          filename: imageFile.name,
-                                          errortype: err}), {variant: "error"})
+      enqueueSnackbar(t('form.error-base', {
+        type: t('form.error-type-thumbnail'),
+        filename: imageFile.name,
+        errortype: err
+      }), { variant: "error" })
     })
   };
 
   const handleBanner = async (files: any[]) => {
     if (files.length === 0) {
-      enqueueSnackbar(t('new.error-drop-one-file'), { variant: "info" })
+      enqueueSnackbar(t('form.error-drop-one-file'), { variant: "info" })
       return null;
     }
 
@@ -272,15 +300,15 @@ export default function NewStickerPackForm() {
         setBanner(hash);
       } catch (e) {
         setBanner("");
-        enqueueSnackbar(t('new.error-ipfs-uploading', { filename: imageFile.name, error: e }), { variant: "error" });
+        enqueueSnackbar(t('form.error-ipfs-uploading', { filename: imageFile.name, error: e }), { variant: "error" });
       } finally {
         setUploadingBanner(false);
       }
     }).catch((err) => {
       setBanner("");
       setUploadingBanner(false);
-      enqueueSnackbar(t('new.error-base', {
-        type: t('new.error-type-banner'),
+      enqueueSnackbar(t('form.error-base', {
+        type: t('form.error-type-banner'),
         filename: imageFile.name,
         errortype: err
       }), { variant: "error" })
@@ -290,10 +318,10 @@ export default function NewStickerPackForm() {
   const handleStickers = async (files: any[]) => {
     const stickersInExcess = stickers.length + files.length - maxStickers
 
-    if(stickersInExcess > 0) {
+    if (stickersInExcess > 0) {
       const toRemoveFromUploading = Math.min(stickersInExcess, files.length)
-      files.splice(files.length-toRemoveFromUploading,toRemoveFromUploading)
-      enqueueSnackbar(t('new.error-max-stickers-reached'), { variant: "warning" })
+      files.splice(files.length - toRemoveFromUploading, toRemoveFromUploading)
+      enqueueSnackbar(t('form.error-max-stickers-reached'), { variant: "warning" })
     }
 
     // run validation on all files
@@ -307,8 +335,8 @@ export default function NewStickerPackForm() {
             validated.push(files[idx])
           } else {
             // show an arror for all rejections
-            enqueueSnackbar(t('new.error-base', {
-              type: t('new.error-type-stickers'),
+            enqueueSnackbar(t('form.error-base', {
+              type: t('form.error-type-stickers'),
               filename: files[idx].name,
               errortype: result.reason
             }), { variant: "error" })
@@ -324,11 +352,11 @@ export default function NewStickerPackForm() {
         // get only uploaded stickers not already uploaded
         const uploaded: any[] = results.reduce((uploaded, ipfsResult, ipfsIdx) => {
           if (ipfsResult.status === 'rejected') {
-            enqueueSnackbar(t('new.error-ipfs-uploading', { filename: validated[ipfsIdx].name, error: ipfsResult.reason }), { variant: "error" });
+            enqueueSnackbar(t('form.error-ipfs-uploading', { filename: validated[ipfsIdx].name, error: ipfsResult.reason }), { variant: "error" });
             return uploaded;
           }
           if (stickers.includes(ipfsResult.value)) {
-            enqueueSnackbar(t('new.error-sticker-already-present', { filename: validated[ipfsIdx].name }), { variant: "warning" });
+            enqueueSnackbar(t('form.error-sticker-already-present', { filename: validated[ipfsIdx].name }), { variant: "warning" });
             return uploaded;
           }
           uploaded.push(ipfsResult.value)
@@ -342,7 +370,7 @@ export default function NewStickerPackForm() {
       })
   };
 
-  const stickerGridRows = Math.ceil((Math.max(stickers.length + uploadingStickers + 1, minStickers) ) / 4);
+  const stickerGridRows = Math.ceil((Math.max(stickers.length + uploadingStickers + 1, minStickers)) / 4);
 
   const stickersToBeUploaded = minStickers - stickers.length;
 
@@ -353,7 +381,7 @@ export default function NewStickerPackForm() {
   const addressAdornment = useMemo<ReactNode>(() => {
 
     if (address === '') return <InputAdornment position="end" style={{ marginRight: 8 }}>
-      <Button variant="outlined" color="primary" onClick={() => { setAddress(account ? account : '') }}>{t('new.use-connected-wallet')}</Button>
+      <Button variant="outlined" color="primary" onClick={() => { setAddress(account ? account : '') }}>{t('form.use-connected-wallet')}</Button>
     </InputAdornment>
 
     if (addressError) return <InputAdornment position="end" style={{ marginRight: 8 }}>
@@ -377,17 +405,22 @@ export default function NewStickerPackForm() {
   return (
     <Box display="flex" flexDirection='column' justifyContent='center' alignItems="center" width='100%'>
       <Box display="flex" flexDirection='column' justifyContent='center' alignItems="center" width='75vw' minWidth='764px' maxWidth='1024px'>
-        <Box alignSelf="flex-start" marginTop="40px">
-          <Typography variant="h5">{t('new.title')}</Typography>
+        <Box display="flex" width='100%' justifyContent='center' alignItems="center" marginTop="40px">
+          <Box flexGrow={1}>
+            <Typography variant="h5">{editMode ? t('form.title-edit') : t('form.title-new')}</Typography>
+          </Box>
+          {editMode &&
+            <DangerButton variant="contained" onClick={() => { setRemoveConfirmationOpen(true) }}>{t('form.remove')}</DangerButton>
+          }
         </Box>
-        <FormSection index={1} title={t('new.meta-title')}>
+        <FormSection index={1} title={t('form.meta-title')}>
           <form noValidate autoComplete="off">
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
                 <InputLabel
                   className={classes.inputLabel}
                   htmlFor="author">
-                  {t('new.meta-artistname')}
+                  {t('form.meta-artistname')}
                 </InputLabel>
                 <BootstrapInput
                   value={author}
@@ -400,7 +433,7 @@ export default function NewStickerPackForm() {
                 <InputLabel
                   className={classes.inputLabel}
                   htmlFor="name">
-                  {t('new.meta-stickerpack-name')}
+                  {t('form.meta-stickerpack-name')}
                 </InputLabel>
                 <BootstrapInput
                   value={name}
@@ -413,7 +446,7 @@ export default function NewStickerPackForm() {
                 <InputLabel
                   className={classes.inputLabel}
                   id="select-category-label">
-                  {t('new.meta-category')}
+                  {t('form.meta-category')}
                 </InputLabel>
                 <Select
                   labelId="select-category-label"
@@ -444,10 +477,10 @@ export default function NewStickerPackForm() {
                 <InputLabel
                   className={classes.inputLabel}
                   htmlFor="address">
-                  {t('new.meta-address')}
+                  {t('form.meta-address')}
                 </InputLabel>
                 <BootstrapInput
-                  placeholder={t('new.meta-address-placeholder')}
+                  placeholder={t('form.meta-address-placeholder')}
                   value={address}
                   onChange={e => setAddress(e.target.value)}
                   fullWidth
@@ -461,11 +494,11 @@ export default function NewStickerPackForm() {
                     <InputLabel
                       className={classes.inputLabel}
                       id="select-limit-installs-label">
-                      {t('new.meta-limit-installs')}
+                      {t('form.meta-limit-installs')}
                     </InputLabel>
                   </Box>
                   <Box>
-                    <Tooltip title={t('new.meta-limit-installs-tooltip').toString()} placement="top-end" arrow>
+                    <Tooltip title={t('form.meta-limit-installs-tooltip').toString()} placement="top-end" arrow>
                       <IconHelp />
                     </Tooltip>
                   </Box>
@@ -488,18 +521,19 @@ export default function NewStickerPackForm() {
                 <InputLabel
                   className={classes.inputLabel}
                   htmlFor="price">
-                  {t('new.meta-price')}
+                  {t('form.meta-price')}
                 </InputLabel>
                 <BootstrapInput
                   type="number"
                   value={price}
-                  onBlur={()=> {if(isNaN(price)) setPrice(0)}}
+                  onBlur={() => { if (isNaN(price)) setPrice(0) }}
                   onChange={e => {
-                    const v = Math.max(0,parseFloat(e.target.value));
-                    setPrice(v)}}
+                    const v = Math.max(0, parseFloat(e.target.value));
+                    setPrice(v)
+                  }}
                   fullWidth
                   id="price"
-                  endAdornment={<InputAdornment position="end" style={{marginRight: 8}}><IconSNT style={{marginRight: 8}}/><Typography>SNT</Typography></InputAdornment>}
+                  endAdornment={<InputAdornment position="end" style={{ marginRight: 8 }}><IconSNT style={{ marginRight: 8 }} /><Typography>SNT</Typography></InputAdornment>}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -508,11 +542,11 @@ export default function NewStickerPackForm() {
                     <InputLabel
                       className={classes.inputLabel}
                       id="select-contribution-label">
-                      {t('new.meta-contribution')}
+                      {t('form.meta-contribution')}
                     </InputLabel>
                   </Box>
                   <Box>
-                    <Tooltip title={t('new.meta-contribution-tooltip').toString()} placement="top-end" arrow>
+                    <Tooltip title={t('form.meta-contribution-tooltip').toString()} placement="top-end" arrow>
                       <IconHelp />
                     </Tooltip>
                   </Box>
@@ -533,41 +567,41 @@ export default function NewStickerPackForm() {
             </Grid>
           </form>
         </FormSection>
-        <FormSection index={2} title={t('new.stickers-title')}>
+        <FormSection index={2} title={t('form.stickers-title')}>
           <Grid container direction="row" justify="center" alignItems="center" spacing={4}>
             <Grid item>
               <EmptyFrame>
                 <Dropzone
                   width={stickerGridWidth}
-                  height={stickerGridRowHeight*stickerGridRows}
+                  height={stickerGridRowHeight * stickerGridRows}
                   onDrop={handleStickers}
                   multiple={true}
-                  draggingLabel={(t("new.drop-files"))}
-                  dropLabel={(t("new.upload-stickers"))}
+                  draggingLabel={(t("form.drop-files"))}
+                  dropLabel={(t("form.upload-stickers"))}
                   disabled={stickers.length === maxStickers || uploadingStickers > 0}>
                   {showStickersPreview &&
                     <StickersDndGrid
-                    width={stickerGridWidth-2}
-                    height={stickerGridRowHeight*stickerGridRows}
-                    columns={stickerGridColumns}
-                    rows={stickerGridRows}
-                    stickers={stickers}
-                    setStickers={setStickers}
-                    uploading={uploadingStickers} />}
+                      width={stickerGridWidth - 2}
+                      height={stickerGridRowHeight * stickerGridRows}
+                      columns={stickerGridColumns}
+                      rows={stickerGridRows}
+                      stickers={stickers}
+                      setStickers={setStickers}
+                      uploading={uploadingStickers} />}
                 </Dropzone>
               </EmptyFrame>
               {stickersToBeUploaded > 0 &&
-                <Typography style={{marginTop: 8, marginLeft: 4}} variant="subtitle2" color="textSecondary">{(t('new.stckers-upload-more',{count: stickersToBeUploaded}))}</Typography>}
+                <Typography style={{ marginTop: 8, marginLeft: 4 }} variant="subtitle2" color="textSecondary">{(t('form.stckers-upload-more', { count: stickersToBeUploaded }))}</Typography>}
             </Grid>
             <Grid item xs>
-              <Typography variant="subtitle2" color="textSecondary" paragraph>{t('new.stckers-description1')}
-                <Typography variant="inherit" display="inline" color="textPrimary">{t('new.stckers-description2')}</Typography>
-                <Typography variant="inherit" display="inline" color="textSecondary">{t('new.stckers-description3')}</Typography>
+              <Typography variant="subtitle2" color="textSecondary" paragraph>{t('form.stckers-description1')}
+                <Typography variant="inherit" display="inline" color="textPrimary">{t('form.stckers-description2')}</Typography>
+                <Typography variant="inherit" display="inline" color="textSecondary">{t('form.stckers-description3')}</Typography>
               </Typography>
-              <Typography variant="subtitle2" color="textSecondary" paragraph>{t('new.stckers-description4')}
-                <Typography variant="inherit" display="inline" color="textPrimary">{t('new.stckers-description5')}</Typography>
+              <Typography variant="subtitle2" color="textSecondary" paragraph>{t('form.stckers-description4')}
+                <Typography variant="inherit" display="inline" color="textPrimary">{t('form.stckers-description5')}</Typography>
               </Typography>
-              <Typography variant="subtitle2" color="textSecondary" paragraph>{t('new.stckers-description6')}
+              <Typography variant="subtitle2" color="textSecondary" paragraph>{t('form.stckers-description6')}
                 <Link href="#" noWrap>
                   {t('terms-and-conditions')}
                 </Link>
@@ -575,86 +609,86 @@ export default function NewStickerPackForm() {
             </Grid>
           </Grid>
         </FormSection>
-        <FormSection index={3} title={t('new.banner-title')}>
+        <FormSection index={3} title={t('form.banner-title')}>
           <Grid container direction="row" justify="center" alignItems="center" spacing={4}>
             <Grid item>
               <EmptyFrame className={classes.bannerFrameSize}>
                 <Dropzone
                   onDrop={handleBanner}
                   multiple={false}
-                  draggingLabel={(t("new.drop-file"))}
-                  dropLabel={(t("new.upload-banner"))}
+                  draggingLabel={(t("form.drop-file"))}
+                  dropLabel={(t("form.upload-banner"))}
                   disabled={showBannerPreview}>
                   {showBannerPreview &&
                     <Image
                       ipfs={banner}
-                      style={{width: 266, height: 175, borderRadius: 16}}
+                      style={{ width: 266, height: 175, borderRadius: 16 }}
                       loading={uploadingBanner}
                       removable
                       onRemove={() => { setBanner('') }} />}
-                  </Dropzone>
+                </Dropzone>
               </EmptyFrame>
             </Grid>
             <Grid item xs>
-              <Typography variant="subtitle2" color="textSecondary" paragraph>{t('new.banner-description1')}</Typography>
+              <Typography variant="subtitle2" color="textSecondary" paragraph>{t('form.banner-description1')}</Typography>
               <Typography variant="subtitle2" paragraph>
-                <Link href="#" noWrap onClick={()=>{setExampleOpen(true)}}>
+                <Link href="#" noWrap onClick={() => { setExampleOpen(true) }}>
                   {t('show-example')}
                 </Link>
               </Typography>
-              <Typography variant="subtitle2" color="textSecondary" paragraph>{t('new.banner-description2')}
-                <Typography variant="inherit" display="inline" color="textPrimary">{t('new.banner-description3')}</Typography>
-                <Typography variant="inherit" display="inline" color="textSecondary">{t('new.banner-description4')}</Typography>
-                <Typography variant="inherit" display="inline" color="textPrimary">{t('new.banner-description5')}</Typography>
-                <Typography variant="inherit" display="inline" color="textSecondary">{t('new.banner-description6')}</Typography>
+              <Typography variant="subtitle2" color="textSecondary" paragraph>{t('form.banner-description2')}
+                <Typography variant="inherit" display="inline" color="textPrimary">{t('form.banner-description3')}</Typography>
+                <Typography variant="inherit" display="inline" color="textSecondary">{t('form.banner-description4')}</Typography>
+                <Typography variant="inherit" display="inline" color="textPrimary">{t('form.banner-description5')}</Typography>
+                <Typography variant="inherit" display="inline" color="textSecondary">{t('form.banner-description6')}</Typography>
               </Typography>
             </Grid>
           </Grid>
         </FormSection>
-        <FormSection index={4} title={t('new.thumbnail-title')}>
+        <FormSection index={4} title={t('form.thumbnail-title')}>
           <Grid container direction="row" justify="center" alignItems="center" spacing={4}>
             <Grid item>
               <EmptyFrame className={classes.thumbnailFrameSize}>
                 <Dropzone
                   onDrop={handleThumbnail}
-                  draggingLabel={(t("new.drop-file"))}
-                  dropLabel={(t("new.upload-thumbnail"))}
+                  draggingLabel={(t("form.drop-file"))}
+                  dropLabel={(t("form.upload-thumbnail"))}
                   disabled={showThumbnailPreview}>
                   {showThumbnailPreview &&
                     <Image
                       ipfs={thumbnail}
-                      style={{width: 128, height: 128, borderRadius: 128}}
+                      style={{ width: 128, height: 128, borderRadius: 128 }}
                       loading={uploadingThumbnail}
                       removable
                       onRemove={() => { setThumbnail('') }} />}
-                  </Dropzone>
+                </Dropzone>
               </EmptyFrame>
             </Grid>
             <Grid item xs>
-              <Typography variant="subtitle2" color="textSecondary" paragraph>{t('new.thumbnail-description1')}</Typography>
+              <Typography variant="subtitle2" color="textSecondary" paragraph>{t('form.thumbnail-description1')}</Typography>
               <Typography variant="subtitle2" paragraph>
-                <Link href="#" noWrap onClick={()=>{setExampleOpen(true)}}>
+                <Link href="#" noWrap onClick={() => { setExampleOpen(true) }}>
                   {t('show-example')}
                 </Link>
               </Typography>
-              <Typography variant="subtitle2" color="textSecondary" paragraph>{t('new.thumbnail-description2')}
-                <Typography variant="inherit" display="inline" color="textPrimary">{t('new.thumbnail-description3')}</Typography>
-                <Typography variant="inherit" display="inline" color="textSecondary">{t('new.thumbnail-description4')}</Typography>
-                <Typography variant="inherit" display="inline" color="textPrimary">{t('new.thumbnail-description5')}</Typography>
-                <Typography variant="inherit" display="inline" color="textSecondary">{t('new.thumbnail-description6')}</Typography>
+              <Typography variant="subtitle2" color="textSecondary" paragraph>{t('form.thumbnail-description2')}
+                <Typography variant="inherit" display="inline" color="textPrimary">{t('form.thumbnail-description3')}</Typography>
+                <Typography variant="inherit" display="inline" color="textSecondary">{t('form.thumbnail-description4')}</Typography>
+                <Typography variant="inherit" display="inline" color="textPrimary">{t('form.thumbnail-description5')}</Typography>
+                <Typography variant="inherit" display="inline" color="textSecondary">{t('form.thumbnail-description6')}</Typography>
               </Typography>
             </Grid>
           </Grid>
         </FormSection>
         <Box alignSelf="flex-start" marginTop="40px" marginLeft="24px">
-        <Button variant="contained" color="primary" onClick={()=>{setConfirmationOpen(true)}} disabled={!complete}>
-            {(t('new.review'))}
-        </Button>
+          <Button variant="contained" color="primary" onClick={() => { setConfirmationOpen(true) }} disabled={!complete}>
+            {editMode ? t('form.update') : t('form.review')}
+          </Button>
         </Box>
       </Box>
       <ConfirmationDialog
         name={name}
-        address={checkedAddress||''}
+        address={checkedAddress || ''}
         stickers={stickers}
         author={author}
         categories={categories}
@@ -664,8 +698,14 @@ export default function NewStickerPackForm() {
         banner={banner}
         open={confirmationOpen}
         price={price}
-        onCancel={()=>{setConfirmationOpen(false)}}
-        onConfirm={()=>{uploadMetadataAndSign()}}/>
-        <ExampleDialog open={exampleOpen} onClose={()=>{setExampleOpen(false)}}/>
+        onCancel={() => { setConfirmationOpen(false) }}
+        onConfirm={() => { uploadMetadataAndSign() }} />
+      <ExampleDialog
+        open={exampleOpen}
+        onClose={() => { setExampleOpen(false) }} />
+      <RemoveConfirmationDialog
+        open={removeConfirmationOpen}
+        onCancel={() => { setRemoveConfirmationOpen(false) }}
+        onConfirm={() => { setRemoveConfirmationOpen(false) }} />  {/*TODO!*/}
     </Box>);
 };

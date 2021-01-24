@@ -14,8 +14,9 @@
         "total-earnings": "TOTAL EARNINGS",
         "contribution-to-status": "CONTRIBUTION TO STATUS"
     },
-    "new": {
-        "title": "New sticker pack",
+    "form": {
+        "title-new": "New sticker pack",
+        "title-edit": "Edit sticker pack",
         "upload-stickers": "Drag or click to upload stickers",
         "upload-banner": "Drag or click to upload banner",
         "upload-thumbnail": "Drag or click to upload thumbnail",
@@ -58,6 +59,8 @@
         "thumbnail-description5": "JPG or PNG ",
         "thumbnail-description6": "format.",
         "review": "Review sticker pack",
+        "update": "Update sticker pack",
+        "remove": "Remove from the market",
         "error-base": "{{type}} ({{filename}}) is not valid: {{errortype}}",
         "error-type-banner": "Banner",
         "error-type-thumbnail": "Thumbnail",
@@ -94,6 +97,12 @@
         "title": "Sticker market banner and thumbnail example",
         "banner-tooltip": "Sticker Market Banner",
         "thumbnail-tooltip": "Sticker Pack Thumbnail"
+    },
+    "remove": {
+        "title": "Are you sure you want to remove this pack from the market?",
+        "subtitle": "Please note that users can still use previously installed sticker packs.",
+        "confirm": "Yes, remove pack",
+        "cancel": "No, keep pack"
     },
     "publising": "Publishing...",
     "back-to-dashboard": "Back to dashboard",

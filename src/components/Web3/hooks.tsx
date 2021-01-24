@@ -130,11 +130,12 @@ export function useFetchMyStickerPackIds() {
 }
 
 
-export function useFetchStickerPackSummary(packId: number | undefined) {
+export function useFetchStickerPack(packId: number | undefined) {
   const { chainId, library } = useWeb3React()
   const [error, setError] = useState<string | undefined>()
   const [loading, setLoading] = useState<boolean>(true)
   const [stickerPackSummary, setStickerPackSummary] = useState<IMetadata>()
+  const [categories, setCategories] = useState<string[]>([])
   const { address } = useStickerTypeContractAddress()
 
   useEffect((): any => {
@@ -145,9 +146,10 @@ export function useFetchStickerPackSummary(packId: number | undefined) {
 
       stc.getPackSummary(packId).then((packSummary: any) => {
 
+        setCategories(packSummary.category)
+
         // ipfs from contenthash from packSummary
-        let contenthash = packSummary[2];
-        let ipfshash = contentHash.decode(contenthash)
+        let ipfshash = contentHash.decode(packSummary.contenthash)
 
         return ipfsFetch(ipfshash)
           .then(metadataEDN => {
@@ -174,7 +176,7 @@ export function useFetchStickerPackSummary(packId: number | undefined) {
     }
   }, [library, chainId, packId, address])
 
-  return { loading: loading, stickerPackSummary: stickerPackSummary, error: error }
+  return { loading: loading, stickerPackSummary: stickerPackSummary, error: error, categories: categories}
 }
 
 export function useFetchPaymentData(packId: number | undefined) {
