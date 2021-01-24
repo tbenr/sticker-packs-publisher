@@ -18,6 +18,7 @@ import EmptyFrame from '../EmptyFrameCard';
 import FormSection from '../FormSection';
 import Image from '../Image';
 import ConfirmationDialog from '../NewStickerPackConfirmationDialog';
+import ExampleDialog from '../StickerPackExampleDialog';
 import StickersDndGrid from '../StickersDndGrid';
 import { useStickerDispatch } from '../Web3/context';
 import { useAddressChecker, useStickerMarketContractAddress } from '../Web3/hooks';
@@ -101,6 +102,7 @@ export default function NewStickerPackForm() {
   const {address : stickerMarketContractAddress} = useStickerMarketContractAddress();
 
   const [confirmationOpen, setConfirmationOpen] = useState<boolean>(false);
+  const [exampleOpen, setExampleOpen] = useState<boolean>(false);
   const { error: addressError, isENS: checkedAddressIsENS, address: checkedAddress } = useAddressChecker(address);
 
   const { enqueueSnackbar } = useSnackbar();
@@ -596,7 +598,7 @@ export default function NewStickerPackForm() {
             <Grid item xs>
               <Typography variant="subtitle2" color="textSecondary" paragraph>{t('new.banner-description1')}</Typography>
               <Typography variant="subtitle2" paragraph>
-                <Link href="#" noWrap>
+                <Link href="#" noWrap onClick={()=>{setExampleOpen(true)}}>
                   {t('show-example')}
                 </Link>
               </Typography>
@@ -631,7 +633,7 @@ export default function NewStickerPackForm() {
             <Grid item xs>
               <Typography variant="subtitle2" color="textSecondary" paragraph>{t('new.thumbnail-description1')}</Typography>
               <Typography variant="subtitle2" paragraph>
-                <Link href="#" noWrap>
+                <Link href="#" noWrap onClick={()=>{setExampleOpen(true)}}>
                   {t('show-example')}
                 </Link>
               </Typography>
@@ -664,5 +666,6 @@ export default function NewStickerPackForm() {
         price={price}
         onCancel={()=>{setConfirmationOpen(false)}}
         onConfirm={()=>{uploadMetadataAndSign()}}/>
+        <ExampleDialog open={exampleOpen} onClose={()=>{setExampleOpen(false)}}/>
     </Box>);
 };

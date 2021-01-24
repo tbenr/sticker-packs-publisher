@@ -1,4 +1,4 @@
-import { Box, Card, CircularProgress, Typography } from '@material-ui/core';
+import { Box, Card, CircularProgress, Tooltip, Typography } from '@material-ui/core';
 import React, { useMemo, useState } from 'react';
 import Skeleton from '@material-ui/lab/Skeleton';
 import { useTranslation } from 'react-i18next';
@@ -29,7 +29,7 @@ interface SPCProps extends Partial<IMetadata> {
 }
 
 export default function StickerPackCard(props: SPCProps) {
-    const { packId, example, preview, txPending = false, skeleton = false, edit = true} = props;
+    const { packId, example, preview, txPending = false, skeleton = false, edit = (example ? false : true)} = props;
 
     const { t } = useTranslation();
     const classes = useStyles();
@@ -65,7 +65,7 @@ export default function StickerPackCard(props: SPCProps) {
             author = preview.author;
             price = preview.price;
         }
-        
+
         let content;
     
         if (errorPS) content = <Box display="flex" style={{
@@ -87,8 +87,14 @@ export default function StickerPackCard(props: SPCProps) {
                 {loading &&
                     <Skeleton variant="rect" animation="wave" style={{width: '100%', height: '160px', borderRadius: 16, marginBottom: '12px'}}/>
                 }
-                {!loading &&
-                    <Image loadingStyle='skeleton' style={{width: '100%', height: '160px', borderRadius: 16, marginBottom: '12px', opacity: showEditIcon ? '0.5' : undefined, filter: showEditIcon ? 'blur(2px)' : undefined}} {...banner}></Image>
+                {!loading && <>
+                        {example && 
+                            <Tooltip title={t('example.banner-tooltip').toString()} placement="top" arrow open={true}>
+                                <Typography/>
+                            </Tooltip>
+                        }
+                       <Image loadingStyle='skeleton' style={{width: '100%', height: '160px', borderRadius: 16, marginBottom: '12px', opacity: showEditIcon ? '0.5' : undefined, filter: showEditIcon ? 'blur(2px)' : undefined}} {...banner}></Image>
+                    </>
                 }
             </Box>
             <Box display="flex">
@@ -98,9 +104,14 @@ export default function StickerPackCard(props: SPCProps) {
                             <CircularProgress style={{width: 18, height: 18}} color='inherit'/>
                         </div>
                     }
-                    {!txPending &&
+                    {!txPending && <>
                         <Image loadingStyle='skeleton' style={{width: 40, height: 40, borderRadius: 40, marginRight: '14px'}} {...thumbnail}></Image>
-                    }
+                        {example && 
+                            <Tooltip title={t('example.thumbnail-tooltip').toString()} placement="bottom" arrow open={true}>
+                                <Typography/>
+                            </Tooltip>
+                        }
+                    </>}
                 </Box>
                 <Box flexGrow={1}>
                     {loading && <>

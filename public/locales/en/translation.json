@@ -90,11 +90,22 @@
         "error-ipfs-uploading": "Error uploading metadata to ipfs ({{error}})",
         "error-tx-sign": "Error signing tansaction ({{error}})"
     },
+    "example": {
+        "title": "Sticker market banner and thumbnail example",
+        "banner-tooltip": "Sticker Market Banner",
+        "thumbnail-tooltip": "Sticker Pack Thumbnail"
+    },
     "publising": "Publishing...",
     "back-to-dashboard": "Back to dashboard",
     "error-loading-pack": "Oh snap! We couldn’t load the data for this pack.",
     "error-loading-img": "Error loading image",
     "error-loading-img-ipfs": "Error loading image from ipfs",
     "show-example": "Show example",
-    "terms-and-conditions": "Terms and Conditions."
+    "terms-and-conditions": "Terms and Conditions.",
+    "wallet": {
+        "error-no-ethereum-provider": "No Ethereum browser extension detected, install MetaMask on desktop or visit from a dApp browser on mobile.",
+        "error-unsupported-chainid": "You're connected to an unsupported network.",
+        "error-rejected-request": "Please authorize this website to access your Ethereum account.",
+        "error-generic": "An unknown error occurred. Check the console for more details."
+    }
 }

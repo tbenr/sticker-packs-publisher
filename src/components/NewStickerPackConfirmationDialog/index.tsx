@@ -62,7 +62,7 @@ interface DialogTitleProps extends WithStyles<typeof styles> {
   }))(MuiDialogActions);
 
 
-interface SimpleDialogProps {
+interface IConfirmDialogProps {
     open: boolean;
     onCancel: () => void;
     onConfirm: () => void;
@@ -81,7 +81,7 @@ interface SimpleDialogProps {
 
 
 
-export default function CustomizedDialogs(props: SimpleDialogProps) {
+export default function NewStickerConfirmationDialog(props: IConfirmDialogProps) {
     const { t } = useTranslation();
 
     const { onCancel, onConfirm, open, author, name, categories, price, address, contribution,installations,thumbnail,banner, stickers } = props;

@@ -10,7 +10,7 @@ import {
 import { UserRejectedRequestError as UserRejectedRequestErrorWalletConnect } from '@web3-react/walletconnect-connector';
 import { SnackbarProvider } from 'notistack';
 import React, { Suspense } from 'react';
-import { useTranslation } from 'react-i18next';
+import { TFunction, useTranslation } from 'react-i18next';
 import {
   BrowserRouter as Router,
   Route, Switch, useHistory
@@ -80,7 +80,9 @@ function Footer() {
 
 function NotConnected(props: any) {
   const { t } = useTranslation();
-  const classes = useStyles()
+  const classes = useStyles();
+
+  const {account, setActivatingConnector, activate, error, active } = props;
 
   return(
     <Grid
@@ -100,29 +102,33 @@ function NotConnected(props: any) {
         <Typography variant="subtitle1" color='textSecondary' align="center" paragraph>{t('home.text2')}</Typography>
         </Grid>
         <Grid item xs={6}>
-        <Typography variant="subtitle1" color='textSecondary' align="center" paragraph>{props.account}</Typography>
-        <Button variant="contained" color="primary" disableElevation disabled={props.active ? true : false} onClick={()=>{props.setActivatingConnector(connectorsByName['Injected']); props.activate(connectorsByName['Injected'])}}>
+        <Typography variant="subtitle1" color='textSecondary' align="center" paragraph>{account}</Typography>
+        <Button variant="contained" color="primary" disableElevation disabled={active ? true : false} onClick={()=>{setActivatingConnector(connectorsByName['Injected']); activate(connectorsByName['Injected'])}}>
           {t('connect-wallet')}
         </Button>
        </Grid>
+       <Grid item xs={6}>
+        <Typography variant="subtitle1" align="center" paragraph></Typography>
+        {!!error && <Typography color="error" variant="subtitle1" align="center" paragraph>{getErrorMessage(t,error)}</Typography>}
+      </Grid>
     </Grid>
   )
 }
 
-function getErrorMessage(error: Error) {
+function getErrorMessage(t: TFunction<string>, error: Error) {
   if (error instanceof NoEthereumProviderError) {
-    return 'No Ethereum browser extension detected, install MetaMask on desktop or visit from a dApp browser on mobile.'
+    return t('wallet.error-no-ethereum-provider')
   } else if (error instanceof UnsupportedChainIdError) {
-    return "You're connected to an unsupported network."
+    return t('wallet.error-unsupported-chainid')
   } else if (
     error instanceof UserRejectedRequestErrorInjected ||
     error instanceof UserRejectedRequestErrorWalletConnect ||
     error instanceof UserRejectedRequestErrorFrame
   ) {
-    return 'Please authorize this website to access your Ethereum account.'
+    return t('wallet.error-rejected-request')
   } else {
     console.error(error)
-    return 'An unknown error occurred. Check the console for more details.'
+    return t('wallet.error-generic')
   }
 }
 
@@ -160,9 +166,8 @@ function Main() {
   return (
     <div>
       {(active !== true) &&
-        <NotConnected account={account} setActivatingConnector={setActivatingConnector} activate={activate}/>
+        <NotConnected account={account} setActivatingConnector={setActivatingConnector} activate={activate} error={error}/>
       }
-      {!!error && <Typography color="error">{getErrorMessage(error)}</Typography>}
       {(active === true) &&
         <>
         <NavBar/>
