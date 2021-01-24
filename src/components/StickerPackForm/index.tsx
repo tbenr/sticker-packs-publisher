@@ -622,7 +622,7 @@ export default function StickerPackForm() {
                   {showBannerPreview &&
                     <Image
                       ipfs={banner}
-                      style={{ width: 266, height: 175, borderRadius: 16 }}
+                      style={{ width: 266, height: 175 }}
                       loading={uploadingBanner}
                       removable
                       onRemove={() => { setBanner('') }} />}
@@ -657,7 +657,7 @@ export default function StickerPackForm() {
                   {showThumbnailPreview &&
                     <Image
                       ipfs={thumbnail}
-                      style={{ width: 128, height: 128, borderRadius: 128 }}
+                      style={{ width: 128, height: 128 }}
                       loading={uploadingThumbnail}
                       removable
                       onRemove={() => { setThumbnail('') }} />}

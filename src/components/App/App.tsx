@@ -140,7 +140,7 @@ function getLibrary(provider: any): Web3Provider {
 function Main() {
   const context = useWeb3React<Web3Provider>()
   const history = useHistory();
-  const { account, connector, active, error, activate } = context
+  const { account, connector, active, error, activate, chainId } = context
 
   // handle logic to recognize the connector currently being activated
   const [activatingConnector, setActivatingConnector] = React.useState<any>()
@@ -156,11 +156,12 @@ function Main() {
   // hand`le logic to connect in reaction to certain events on the injected ethereum provider, if it exists
   useInactiveListener(!triedEager || !!activatingConnector)
 
+  // always go back to dashboard if something changes
   React.useEffect(() => {
     if (active === true) {
       history.push('/dashboard/');
     }
-  }, [active, history])
+  }, [active, history, account, chainId])
 
   return (
     <div>
