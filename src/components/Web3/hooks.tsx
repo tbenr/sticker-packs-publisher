@@ -221,7 +221,7 @@ export function useAddressChecker(addressOrENS: string, debounce:boolean = true)
   const debouncedAddressOrENS = useDebounce(addressOrENS, debounce ? 200 : 0)
 
   useEffect((): any => {
-    if(!debouncedAddressOrENS) {
+    if(!debouncedAddressOrENS || addressOrENS !== debouncedAddressOrENS) {
       setAddress(undefined)
       setError(undefined)
       setIsENS(undefined)
@@ -249,7 +249,7 @@ export function useAddressChecker(addressOrENS: string, debounce:boolean = true)
       setError('invalid address')
       setIsENS(undefined)
     }
-  },[debouncedAddressOrENS, chainId, library])
+  },[debouncedAddressOrENS, chainId, library, addressOrENS])
 
   return { address: address, error: error, isENS: isENS}
 }
