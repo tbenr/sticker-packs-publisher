@@ -115,6 +115,7 @@ export function useFetchMyStickerPackIds() {
 
           setMyStickerPackIds(packIds);
           setLoading(false);
+          setError(undefined);
         })
 
       }).catch((e: any) => {
@@ -161,6 +162,7 @@ export function useFetchStickerPackSummary(packId: number | undefined) {
 
             setStickerPackSummary(packSummary);
             setLoading(false)
+            setError(undefined);
           });
       }).catch((e: any) => {
         setError(e)
@@ -196,6 +198,7 @@ export function useFetchPaymentData(packId: number | undefined) {
 
         setPaymentData(i.toString());
         setLoading(false)
+        setError(undefined);
       }).catch((e: any) => {
         setError(e)
         console.log(e);

@@ -1,4 +1,4 @@
-import { Grid } from '@material-ui/core';
+import { Grid, Typography } from '@material-ui/core';
 import React from 'react';
 import NewStickerPackCard from '../NewStickerPackCard';
 import StickerPackCard from '../StickerPackCard';
@@ -25,7 +25,7 @@ function TopCard(props: any) {
 export default function Dashboard() {
     const classes = useStyles();
 
-    const { loading, myStickerPackIds } = useFetchMyStickerPackIds()
+    const { loading, myStickerPackIds, error } = useFetchMyStickerPackIds()
     const { PendingStickers } = useStickerState();
 
     return (
@@ -43,6 +43,7 @@ export default function Dashboard() {
                 </Grid>
             </Grid>
             */}
+            {error && <Typography color="error">{error.toString()}</Typography>}
             <Grid className={classes.stickerCardsContainer} container direction="row" alignContent="flex-start" justify="center" alignItems="flex-start" spacing={4}>
                 {myStickerPackIds.map((packId) =>
                     <Grid key={packId} item>

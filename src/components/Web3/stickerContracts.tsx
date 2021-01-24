@@ -2018,6 +2018,7 @@ const StickerTypeABI =[
 ]
 
 
+// ENS can be used in contract addesses. They will be automatically resolved.
 interface TAddresses {
   [key: number]: string
 }
