@@ -1,4 +1,9 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# Sticker Pack Publisher dApp
+This dApp allows creators to submit stickers that Status users can purchase and install for use in Status chat.
+
+## TODO
+
+- [ ] complete edit flow based on data that can be modified and implement corresponding contract interaction
 
 ## Available Scripts
 
