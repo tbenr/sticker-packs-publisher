@@ -67,6 +67,7 @@ interface IConfirmDialogProps {
     onCancel: () => void;
     onConfirm: () => void;
 
+    editMode: boolean;
     name: string;
     stickers: string[];
     address: string;

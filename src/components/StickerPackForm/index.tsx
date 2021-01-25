@@ -698,8 +698,9 @@ export default function StickerPackForm() {
         banner={banner}
         open={confirmationOpen}
         price={price}
+        editMode={editMode}
         onCancel={() => { setConfirmationOpen(false) }}
-        onConfirm={() => { uploadMetadataAndSign() }} />
+        onConfirm={() => { editMode ? enqueueSnackbar('not implemented', { variant: "info" }) : uploadMetadataAndSign() }} />  {/*TODO!*/}
       <ExampleDialog
         open={exampleOpen}
         onClose={() => { setExampleOpen(false) }} />
