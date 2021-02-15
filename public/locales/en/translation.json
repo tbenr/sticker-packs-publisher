@@ -116,5 +116,10 @@
         "error-unsupported-chainid": "You're connected to an unsupported network.",
         "error-rejected-request": "Please authorize this website to access your Ethereum account.",
         "error-generic": "An unknown error occurred. Check the console for more details."
+    },
+    "footer": {
+        "name": "Status Stickers",
+        "terms-privacy": "Terms • Privacy"
     }
+    
 }

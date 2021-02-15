@@ -64,15 +64,18 @@ function Loader() {
   const classes = useStyles();
   return (
   <div className="App">
-    <img src={logo} className={classes.homeLogo} alt="logo"/>
+    {/* empty loader page until a good solution to let it appears for a minimum amount of time (2 seconds?) is found
+    <img src={logo} className={classes.homeLogo} alt="logo"/>*/
+    }
   </div>
   )}
 
 function Footer() {
   const classes = useStyles();
+  const { t } = useTranslation();
   return (
     <div className={classes.footerContainer}>
-      <b>Status Sitckers</b><br/>Terms • Privacy
+      <b>{t('footer.name')}</b><br/>{t('footer.terms-privacy')}
     </div>
     )
 }
